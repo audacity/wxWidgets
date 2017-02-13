@@ -838,6 +838,8 @@ dnl wxDC is implemented in terms of wxGraphicsContext in wxOSX so the latter
 dnl can't be disabled, don't even provide an option to do it
 if test "$wxUSE_MAC" != 1; then
 WX_ARG_FEATURE(graphics_ctx,[  --enable-graphics_ctx   use graphics context 2D drawing API], wxUSE_GRAPHICS_CONTEXT)
+else
+WX_ARG_DISABLE(qtkit,       [  --disable-qtkit         force AVFoundation instead of QTKit (requires OS X 10.7+)], wxOSX_USE_QTKIT)
 fi
 
 dnl ---------------------------------------------------------------------------
@@ -6535,7 +6537,7 @@ if test "$USE_WIN32" = 1 -a \( "$wxUSE_DATAOBJ"       = "yes" \
                            [AC_MSG_RESULT(no)],
                            [AC_MSG_RESULT(yes)
                             WXCONFIG_CXXFLAGS="$WXCONFIG_CXXFLAGS -fvtable-thunks"])
-            LIBS=" -lrpcrt4 -loleaut32 -lole32 -luuid$LIBS"
+            LIBS=" -lrpcrt4 -loleaut32 -lole32 -luuid $LIBS"
             if test "$wxUSE_OLE" = "yes" ; then
                 AC_DEFINE(wxUSE_OLE)
                 AC_DEFINE(wxUSE_OLE_AUTOMATION)
@@ -7546,27 +7548,43 @@ if test "$wxUSE_MEDIACTRL" = "yes" -o "$wxUSE_MEDIACTRL" = "auto"; then
         dnl Test for at least 0.8 gstreamer module from pkg-config
         dnl Even totem doesn't accept 0.9 evidently.
         dnl
-        dnl So, we first check to see if 0.10 if available - if not we
-        dnl try the older 0.8 version
+        dnl So, we first check to see if 1.0 if available - if not we
+        dnl try the older 0.10 and 0.8 versions
         dnl -------------------------------------------------------------------
-        GST_VERSION_MAJOR=0
-        GST_VERSION_MINOR=10
+        GST_VERSION_MAJOR=1
+        GST_VERSION_MINOR=0
         GST_VERSION=$GST_VERSION_MAJOR.$GST_VERSION_MINOR
 
         if test "$wxUSE_GSTREAMER8" = "no"; then
             PKG_CHECK_MODULES(GST,
-                [gstreamer-$GST_VERSION gstreamer-plugins-base-$GST_VERSION],
+                [gstreamer-$GST_VERSION gstreamer-video-$GST_VERSION],
                 [
                     wxUSE_GSTREAMER="yes"
-                    GST_LIBS="$GST_LIBS -lgstinterfaces-$GST_VERSION"
                 ],
                 [
-                    AC_MSG_WARN([GStreamer 0.10 not available, falling back to 0.8])
-                    GST_VERSION_MINOR=8
+                    AC_MSG_WARN([GStreamer 1.0 not available, falling back to 0.10])
+                    GST_VERSION_MAJOR=0
+                    GST_VERSION_MINOR=10
+                    GST_VERSION=$GST_VERSION_MAJOR.$GST_VERSION_MINOR
                 ]
             )
+
+            if test $GST_VERSION_MINOR = "10"; then
+                PKG_CHECK_MODULES(GST,
+                    [gstreamer-$GST_VERSION gstreamer-plugins-base-$GST_VERSION],
+                    [
+                        wxUSE_GSTREAMER="yes"
+                        GST_LIBS="$GST_LIBS -lgstinterfaces-$GST_VERSION"
+                    ],
+                    [
+                        AC_MSG_WARN([GStreamer 0.10 not available, falling back to 0.8])
+                    ]
+                )
+            fi
+
         else
             dnl check only for 0.8
+            GST_VERSION_MAJOR=0
             GST_VERSION_MINOR=8
         fi
 
@@ -7576,7 +7594,7 @@ if test "$wxUSE_MEDIACTRL" = "yes" -o "$wxUSE_MEDIACTRL" = "auto"; then
                 [gstreamer-$GST_VERSION gstreamer-interfaces-$GST_VERSION gstreamer-gconf-$GST_VERSION],
                 wxUSE_GSTREAMER="yes",
                 [
-                    AC_MSG_WARN([GStreamer 0.8/0.10 not available.])
+                    AC_MSG_WARN([GStreamer 0.8/0.10/1.0 not available.])
                 ])
         fi
 
@@ -7590,10 +7608,50 @@ if test "$wxUSE_MEDIACTRL" = "yes" -o "$wxUSE_MEDIACTRL" = "auto"; then
             USE_MEDIA=0
         fi
 
-    elif test "$wxUSE_MAC" = 1; then 
-         dnl We always have the necessary libraries under Mac 
-         dnl but we need to link with it explicitly.
-         GST_LIBS="-framework QTKit"
+    elif test "$wxUSE_MAC" = 1; then
+        if test "$wxUSE_OSX_IPHONE" = 1; then
+            dnl this will also be used for cocoa in the future
+            GST_LIBS="-framework AVFoundation -framework CoreMedia"
+        else
+            dnl We always have the necessary libraries under Mac
+            dnl but we need to link with it explicitly.
+            dnl QTKit is no longer available as of 10.12 SDK
+
+            old_CPPFLAGS="$CPPFLAGS"
+            CPPFLAGS="-x objective-c++ $CPPFLAGS"
+            if test "$wxOSX_USE_QTKIT" = "no"; then
+                dnl Do not test for QTKit if has been disabled from the command line
+                AC_DEFINE(wxOSX_USE_QTKIT,0)
+                GST_LIBS="-framework AVFoundation -framework CoreMedia"
+            else
+                dnl check if QTKit is available, otherwise force AVFoundation usage
+                AC_CHECK_HEADER([QTKit/QTKit.h],
+                                [
+                                    GST_LIBS="-framework QTKit"
+                                ],
+                                [
+                                    AC_DEFINE(wxOSX_USE_QTKIT,0)
+                                    wxOSX_USE_QTKIT=no
+                                    GST_LIBS="-framework AVFoundation -framework CoreMedia"
+                                ])
+            fi
+            if test "$wxOSX_USE_QTKIT" = "no"; then
+                dnl AVKit is only available since OS X 10.9
+                AC_MSG_CHECKING([if AVKit is availble])
+                AC_TRY_COMPILE(
+                    [#include "AvailabilityMacros.h"],
+                    [
+                        #if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9
+                            // AVKit available
+                        #else
+                            choke me
+                        #endif
+                    ],
+                    GST_LIBS="$GST_LIBS -framework AVKit"
+                )
+            fi
+            CPPFLAGS="$old_CPPFLAGS"
+        fi
     fi
 
     if test $USE_MEDIA = 1; then

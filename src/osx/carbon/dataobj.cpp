@@ -29,10 +29,6 @@
 
 #include "wx/osx/private.h"
 
-#if wxOSX_USE_COCOA_OR_CARBON
-    #include <QuickTime/QuickTime.h>
-#endif
-
 // ----------------------------------------------------------------------------
 // wxDataFormat
 // ----------------------------------------------------------------------------
@@ -463,7 +459,7 @@ bool wxDataObject::GetFromPasteboard( void * pb )
                             // indicate the expected format for the type, benefiting from native conversions eg utf8 -> utf16
                             flavorType = (CFStringRef) wxDataFormat( flavorFormat.GetType()).GetFormatId();
                         }
-                        
+
                         err = PasteboardCopyItemFlavorData( pasteboard, itemID, flavorType , &flavorData );
                         if ( err == noErr )
                         {

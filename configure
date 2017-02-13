@@ -1045,6 +1045,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -1238,6 +1239,7 @@ enable_svg
 enable_webkit
 enable_webview
 enable_graphics_ctx
+enable_qtkit
 enable_clipboard
 enable_dnd
 enable_controls
@@ -1459,6 +1461,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1711,6 +1714,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1848,7 +1860,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -2001,6 +2013,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -2169,6 +2182,7 @@ Optional Features:
   --enable-webkit         use wxWebKitCtrl (Mac-only, use wxWebView instead)
   --enable-webview        use wxWebView library
   --enable-graphics_ctx   use graphics context 2D drawing API
+  --disable-qtkit         force AVFoundation instead of QTKit (requires OS X 10.7+)
   --enable-clipboard      use wxClipboard class
   --enable-dnd            use Drag'n'Drop classes
   --disable-controls      disable compilation of all standard controls
@@ -3339,6 +3353,97 @@ fi
   as_fn_set_status $ac_retval
 
 } # ac_fn_cxx_try_run
+
+# ac_fn_c_check_header_mongrel LINENO HEADER VAR INCLUDES
+# -------------------------------------------------------
+# Tests whether HEADER exists, giving a warning if it cannot be compiled using
+# the include files in INCLUDES and setting the cache variable VAR
+# accordingly.
+ac_fn_c_check_header_mongrel ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  if eval \${$3+:} false; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
+$as_echo_n "checking for $2... " >&6; }
+if eval \${$3+:} false; then :
+  $as_echo_n "(cached) " >&6
+fi
+eval ac_res=\$$3
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+else
+  # Is the header compilable?
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking $2 usability" >&5
+$as_echo_n "checking $2 usability... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+#include <$2>
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_header_compiler=yes
+else
+  ac_header_compiler=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_header_compiler" >&5
+$as_echo "$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking $2 presence" >&5
+$as_echo_n "checking $2 presence... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <$2>
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"; then :
+  ac_header_preproc=yes
+else
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_header_preproc" >&5
+$as_echo "$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in #((
+  yes:no: )
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: accepted by the compiler, rejected by the preprocessor!" >&5
+$as_echo "$as_me: WARNING: $2: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: proceeding with the compiler's result" >&5
+$as_echo "$as_me: WARNING: $2: proceeding with the compiler's result" >&2;}
+    ;;
+  no:yes:* )
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: present but cannot be compiled" >&5
+$as_echo "$as_me: WARNING: $2: present but cannot be compiled" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2:     check for missing prerequisite headers?" >&5
+$as_echo "$as_me: WARNING: $2:     check for missing prerequisite headers?" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: see the Autoconf documentation" >&5
+$as_echo "$as_me: WARNING: $2: see the Autoconf documentation" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2:     section \"Present But Cannot Be Compiled\"" >&5
+$as_echo "$as_me: WARNING: $2:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: proceeding with the compiler's result" >&5
+$as_echo "$as_me: WARNING: $2: proceeding with the compiler's result" >&2;}
+( $as_echo "## ----------------------------------------- ##
+## Report this to wx-dev@lists.wxwidgets.org ##
+## ----------------------------------------- ##"
+     ) | sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
+$as_echo_n "checking for $2... " >&6; }
+if eval \${$3+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  eval "$3=\$ac_header_compiler"
+fi
+eval ac_res=\$$3
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+fi
+  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
+
+} # ac_fn_c_check_header_mongrel
 cat >config.log <<_ACEOF
 This file contains any messages produced by compilers while
 running configure, to aid debugging if configure makes a mistake.
@@ -10918,6 +11023,51 @@ fi
             fi
           else
             result=$wxUSE_GRAPHICS_CONTEXT
+          fi
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $result" >&5
+$as_echo "$result" >&6; }
+
+else
+
+          enablestring=disable
+          defaultval=
+          if test -z "$defaultval"; then
+              if test x"$enablestring" = xdisable; then
+                  defaultval=yes
+              else
+                  defaultval=no
+              fi
+          fi
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --${enablestring:-enable}-qtkit" >&5
+$as_echo_n "checking for --${enablestring:-enable}-qtkit... " >&6; }
+          # Check whether --enable-qtkit was given.
+if test "${enable_qtkit+set}" = set; then :
+  enableval=$enable_qtkit;
+                          if test "$enableval" = yes; then
+                            wx_cv_use_qtkit='wxOSX_USE_QTKIT=yes'
+                          else
+                            wx_cv_use_qtkit='wxOSX_USE_QTKIT=no'
+                          fi
+
+else
+
+                          wx_cv_use_qtkit='wxOSX_USE_QTKIT=${'DEFAULT_wxOSX_USE_QTKIT":-$defaultval}"
+
+fi
+
+
+          eval "$wx_cv_use_qtkit"
+
+          if test x"$enablestring" = xdisable; then
+            if test $wxOSX_USE_QTKIT = no; then
+              result=yes
+            else
+              result=no
+            fi
+          else
+            result=$wxOSX_USE_QTKIT
           fi
 
           { $as_echo "$as_me:${as_lineno-$LINENO}: result: $result" >&5
@@ -35840,7 +35990,7 @@ $as_echo "yes" >&6; }
                             WXCONFIG_CXXFLAGS="$WXCONFIG_CXXFLAGS -fvtable-thunks"
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-            LIBS=" -lrpcrt4 -loleaut32 -lole32 -luuid$LIBS"
+            LIBS=" -lrpcrt4 -loleaut32 -lole32 -luuid $LIBS"
             if test "$wxUSE_OLE" = "yes" ; then
                 $as_echo "#define wxUSE_OLE 1" >>confdefs.h
 
@@ -37183,11 +37333,98 @@ if test "$wxUSE_MEDIACTRL" = "yes" -o "$wxUSE_MEDIACTRL" = "auto"; then
                 if test "$wxUSE_GTK" = 1; then
         wxUSE_GSTREAMER="no"
 
-                                                                GST_VERSION_MAJOR=0
-        GST_VERSION_MINOR=10
+                                                                GST_VERSION_MAJOR=1
+        GST_VERSION_MINOR=0
         GST_VERSION=$GST_VERSION_MAJOR.$GST_VERSION_MINOR
 
         if test "$wxUSE_GSTREAMER8" = "no"; then
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for GST" >&5
+$as_echo_n "checking for GST... " >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$GST_CFLAGS"; then
+        pkg_cv_GST_CFLAGS="$GST_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gstreamer-\$GST_VERSION gstreamer-video-\$GST_VERSION\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gstreamer-$GST_VERSION gstreamer-video-$GST_VERSION") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GST_CFLAGS=`$PKG_CONFIG --cflags "gstreamer-$GST_VERSION gstreamer-video-$GST_VERSION" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$GST_LIBS"; then
+        pkg_cv_GST_LIBS="$GST_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gstreamer-\$GST_VERSION gstreamer-video-\$GST_VERSION\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gstreamer-$GST_VERSION gstreamer-video-$GST_VERSION") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GST_LIBS=`$PKG_CONFIG --libs "gstreamer-$GST_VERSION gstreamer-video-$GST_VERSION" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        GST_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "gstreamer-$GST_VERSION gstreamer-video-$GST_VERSION"`
+        else
+	        GST_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "gstreamer-$GST_VERSION gstreamer-video-$GST_VERSION"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$GST_PKG_ERRORS" >&5
+
+
+                    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: GStreamer 1.0 not available, falling back to 0.10" >&5
+$as_echo "$as_me: WARNING: GStreamer 1.0 not available, falling back to 0.10" >&2;}
+                    GST_VERSION_MAJOR=0
+                    GST_VERSION_MINOR=10
+                    GST_VERSION=$GST_VERSION_MAJOR.$GST_VERSION_MINOR
+
+
+elif test $pkg_failed = untried; then
+
+                    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: GStreamer 1.0 not available, falling back to 0.10" >&5
+$as_echo "$as_me: WARNING: GStreamer 1.0 not available, falling back to 0.10" >&2;}
+                    GST_VERSION_MAJOR=0
+                    GST_VERSION_MINOR=10
+                    GST_VERSION=$GST_VERSION_MAJOR.$GST_VERSION_MINOR
+
+
+else
+	GST_CFLAGS=$pkg_cv_GST_CFLAGS
+	GST_LIBS=$pkg_cv_GST_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+                    wxUSE_GSTREAMER="yes"
+
+fi
+
+            if test $GST_VERSION_MINOR = "10"; then
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GST" >&5
@@ -37248,16 +37485,14 @@ fi
 	echo "$GST_PKG_ERRORS" >&5
 
 
-                    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: GStreamer 0.10 not available, falling back to 0.8" >&5
+                        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: GStreamer 0.10 not available, falling back to 0.8" >&5
 $as_echo "$as_me: WARNING: GStreamer 0.10 not available, falling back to 0.8" >&2;}
-                    GST_VERSION_MINOR=8
 
 
 elif test $pkg_failed = untried; then
 
-                    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: GStreamer 0.10 not available, falling back to 0.8" >&5
+                        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: GStreamer 0.10 not available, falling back to 0.8" >&5
 $as_echo "$as_me: WARNING: GStreamer 0.10 not available, falling back to 0.8" >&2;}
-                    GST_VERSION_MINOR=8
 
 
 else
@@ -37266,12 +37501,15 @@ else
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-                    wxUSE_GSTREAMER="yes"
-                    GST_LIBS="$GST_LIBS -lgstinterfaces-$GST_VERSION"
+                        wxUSE_GSTREAMER="yes"
+                        GST_LIBS="$GST_LIBS -lgstinterfaces-$GST_VERSION"
 
 fi
+            fi
+
         else
-                        GST_VERSION_MINOR=8
+                        GST_VERSION_MAJOR=0
+            GST_VERSION_MINOR=8
         fi
 
         if test $GST_VERSION_MINOR = "8"; then
@@ -37336,13 +37574,13 @@ fi
 	echo "$GST_PKG_ERRORS" >&5
 
 
-                    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: GStreamer 0.8/0.10 not available." >&5
-$as_echo "$as_me: WARNING: GStreamer 0.8/0.10 not available." >&2;}
+                    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: GStreamer 0.8/0.10/1.0 not available." >&5
+$as_echo "$as_me: WARNING: GStreamer 0.8/0.10/1.0 not available." >&2;}
 
 elif test $pkg_failed = untried; then
 
-                    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: GStreamer 0.8/0.10 not available." >&5
-$as_echo "$as_me: WARNING: GStreamer 0.8/0.10 not available." >&2;}
+                    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: GStreamer 0.8/0.10/1.0 not available." >&5
+$as_echo "$as_me: WARNING: GStreamer 0.8/0.10/1.0 not available." >&2;}
 
 else
 	GST_CFLAGS=$pkg_cv_GST_CFLAGS
@@ -37365,7 +37603,61 @@ fi
         fi
 
     elif test "$wxUSE_MAC" = 1; then
-                           GST_LIBS="-framework QTKit"
+        if test "$wxUSE_OSX_IPHONE" = 1; then
+                        GST_LIBS="-framework AVFoundation -framework CoreMedia"
+        else
+
+            old_CPPFLAGS="$CPPFLAGS"
+            CPPFLAGS="-x objective-c++ $CPPFLAGS"
+            if test "$wxOSX_USE_QTKIT" = "no"; then
+                                $as_echo "#define wxOSX_USE_QTKIT 0" >>confdefs.h
+
+                GST_LIBS="-framework AVFoundation -framework CoreMedia"
+            else
+                                ac_fn_c_check_header_mongrel "$LINENO" "QTKit/QTKit.h" "ac_cv_header_QTKit_QTKit_h" "$ac_includes_default"
+if test "x$ac_cv_header_QTKit_QTKit_h" = xyes; then :
+
+                                    GST_LIBS="-framework QTKit"
+
+else
+
+                                    $as_echo "#define wxOSX_USE_QTKIT 0" >>confdefs.h
+
+                                    wxOSX_USE_QTKIT=no
+                                    GST_LIBS="-framework AVFoundation -framework CoreMedia"
+
+fi
+
+
+            fi
+            if test "$wxOSX_USE_QTKIT" = "no"; then
+                                { $as_echo "$as_me:${as_lineno-$LINENO}: checking if AVKit is availble" >&5
+$as_echo_n "checking if AVKit is availble... " >&6; }
+                cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include "AvailabilityMacros.h"
+int
+main ()
+{
+
+                        #if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_9
+                            // AVKit available
+                        #else
+                            choke me
+                        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  GST_LIBS="$GST_LIBS -framework AVKit"
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+            fi
+            CPPFLAGS="$old_CPPFLAGS"
+        fi
     fi
 
     if test $USE_MEDIA = 1; then

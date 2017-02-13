@@ -280,6 +280,26 @@ DEFINE_ONE_SHOT_HANDLER_GETTER( wxWebKitCtrlEventHandler )
 
 #endif
 
+#if wxOSX_USE_COCOA
+
+// NOTE: The standard WebView behavior is to clear the selection when the view loses focus.
+// This causes various problems when the WebView is editable, though, and it is still possible
+// to clear the selection when the view loses focus, so for now, just have it always retain
+// selection regardless of focus state.
+@interface WebView (Helpers)
+- (BOOL) maintainsInactiveSelection;
+@end
+
+@implementation WebView (Helpers)
+
+- (BOOL) maintainsInactiveSelection
+{
+    return true;
+}
+
+@end
+#endif
+
 // ----------------------------------------------------------------------------
 // wxWebKit Events
 // ----------------------------------------------------------------------------
@@ -951,6 +971,19 @@ void wxWebKitCtrl::MacVisibilityChanged(){
     wxUnusedVar(frameView);
 
     webKitWindow->Print(true);
+}
+
+- (NSArray *)webView:(WebView *)sender contextMenuItemsForElement:(NSDictionary *)element defaultMenuItems:(NSArray *)defaultMenuItems
+{
+    wxContextMenuEvent evtCtx(wxEVT_CONTEXT_MENU,
+                                  webKitWindow->GetId(),
+                                  wxGetMousePosition());
+    evtCtx.SetEventObject(webKitWindow);
+    if ( ! webKitWindow->HandleWindowEvent(evtCtx) ) {
+        return defaultMenuItems;
+    }
+
+    return 0;
 }
 @end
 

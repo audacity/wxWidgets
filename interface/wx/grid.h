@@ -771,7 +771,10 @@ public:
         Row,
 
         /// Return the attribute set for this cells column.
-        Col
+        Col,
+
+        Default,
+        Merged
     };
 
     /**
@@ -947,6 +950,22 @@ public:
         Sets the text colour.
     */
     void SetTextColour(const wxColour& colText);
+
+    
+    void MergeWith(wxGridCellAttr *mergefrom);
+
+    void SetSize(int num_rows, int num_cols);
+    void SetOverflow(bool allow = true);
+    void SetKind(wxAttrKind kind);
+
+    bool HasReadWriteMode() const;
+    bool HasOverflowMode() const;
+    bool HasSize() const;
+
+    void GetSize(int *num_rows, int *num_cols) const;
+    bool GetOverflow() const;
+    wxAttrKind GetKind();
+
 
 protected:
 
@@ -2704,6 +2723,13 @@ public:
     bool IsCellEditControlEnabled() const;
 
     /**
+        Returns @true if the in-place edit control is currently shown.
+
+        @see HideCellEditControl()
+    */
+    bool IsCellEditControlShown() const;
+
+    /**
         Returns @true if the current cell is read-only.
 
         @see SetReadOnly(), IsReadOnly()
@@ -3660,6 +3686,21 @@ public:
     void ClearSelection();
 
     /**
+        Deselects a row of cells.
+    */
+    void DeselectRow( int row );
+
+    /**
+        Deselects a column of cells.
+    */
+    void DeselectCol( int col );
+
+    /**
+        Deselects a cell.
+    */
+    void DeselectCell( int row, int col );
+
+    /**
         Returns an array of individually selected cells.
 
         Notice that this array does @em not contain all the selected cells in
@@ -4289,6 +4330,16 @@ public:
                  const wxGridCellCoords& topLeft = wxGridCellCoords( -1, -1 ),
                  const wxGridCellCoords& bottomRight = wxGridCellCoords( -1, -1 ),
                  int style = wxGRID_DRAW_DEFAULT );
+
+    /**
+        Sets the cell attributes for the specified cell.
+
+        The grid takes ownership of the attribute pointer.
+
+        See the wxGridCellAttr class for more information about controlling
+        cell attributes.
+    */
+    void SetAttr(int row, int col, wxGridCellAttr *attr);
 
     /**
         Sets the cell attributes for all cells in the specified column.
