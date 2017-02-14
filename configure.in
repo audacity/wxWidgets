@@ -6535,7 +6535,7 @@ if test "$USE_WIN32" = 1 -a \( "$wxUSE_DATAOBJ"       = "yes" \
                            [AC_MSG_RESULT(no)],
                            [AC_MSG_RESULT(yes)
                             WXCONFIG_CXXFLAGS="$WXCONFIG_CXXFLAGS -fvtable-thunks"])
-            LIBS=" -lrpcrt4 -loleaut32 -lole32 -luuid$LIBS"
+            LIBS=" -lrpcrt4 -loleaut32 -lole32 -luuid $LIBS"
             if test "$wxUSE_OLE" = "yes" ; then
                 AC_DEFINE(wxUSE_OLE)
                 AC_DEFINE(wxUSE_OLE_AUTOMATION)
