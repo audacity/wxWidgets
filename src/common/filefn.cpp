@@ -1185,15 +1185,14 @@ wxRenameFile(const wxString& file1, const wxString& file2, bool overwrite)
     // For explanation, see:  (warning...based mostly on observed behavior)
     //   http://bugzilla.audacityteam.org/show_bug.cgi?id=1266
     //   https://github.com/audacity/audacity/pull/94
-  unsigned long doserrno = 0;
+  errno = 0;
   for (int i = 0; i < 2000; i++)
   {
     if ( wxRename (file1, file2) == 0 )
       return true;
-    unsigned long doserrno;
-    _get_doserrno(&doserrno);
-    if (doserrno != ERROR_ACCESS_DENIED && (doserrno != ERROR_ALREADY_EXISTS || exists))
+    if (errno != EACCES && (errno != EEXIST || exists))
         break;
+
     wxMilliSleep(1);
   }
 #endif
