@@ -1519,9 +1519,9 @@
  */
 #if wxUSE_GUI
 
-#if wxUSE_ACCESSIBILITY && !( defined(__WXMSW__) || defined(__WXOSX_COCOA__) )
+#if wxUSE_ACCESSIBILITY && !defined(__WXMSW__)
 #   ifdef wxABORT_ON_CONFIG_ERROR
-#       error "wxUSE_ACCESSIBILITY is currently only supported under wxMSW or Cocoa"
+#       error "wxUSE_ACCESSIBILITY is currently only supported under wxMSW"
 #   else
 #       undef wxUSE_ACCESSIBILITY
 #       define wxUSE_ACCESSIBILITY 0

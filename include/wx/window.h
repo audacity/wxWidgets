@@ -254,9 +254,7 @@ public:
 
     // moving/resizing
     // ---------------
-#ifdef __WXMAC__
-    virtual bool NeedsFocusRing() const { return false; }
-#endif
+
         // set the window size and/or position
     void SetSize( int x, int y, int width, int height,
                   int sizeFlags = wxSIZE_AUTO )
