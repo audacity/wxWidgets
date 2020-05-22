@@ -371,6 +371,20 @@ private:
     #include "wx/msw/ole/access.h"
 #endif
 
+#if defined(__WXMAC__)
+
+class WXDLLIMPEXP_CORE wxAccessible : public wxAccessibleBase
+{
+public:
+   wxAccessible(wxWindow *win = NULL) : wxAccessibleBase(win) {}
+   virtual ~wxAccessible() {}
+
+   static void NotifyEvent
+   (int eventType, wxWindow* window, wxAccObject objectType, int objectId);
+};
+
+#endif
+
 #endif // wxUSE_ACCESSIBILITY
 
 #endif // _WX_ACCESSBASE_H_

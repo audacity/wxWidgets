@@ -43,6 +43,10 @@ public:
     // specific window when the platform supports per-monitor DPI
     static wxSize GetDefaultSize(wxWindow* win = NULL);
 
+#ifdef __WXMAC__
+    virtual bool NeedsFocusRing() const wxOVERRIDE { return true; }
+#endif
+
 protected:
     wxDECLARE_NO_COPY_CLASS(wxButtonBase);
 };

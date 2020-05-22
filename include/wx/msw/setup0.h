@@ -87,11 +87,12 @@
 // NDEBUG) or, on the contrary, enable more asserts, including the usually
 // disabled ones, in the debug build (then do it inside #ifndef NDEBUG)
 //
-// #ifdef NDEBUG
-//  #define wxDEBUG_LEVEL 0
-// #else
-//  #define wxDEBUG_LEVEL 2
-// #endif
+// Uncommented for Audacity, and set to 1 (rather than 2) for debug builds.
+#ifdef NDEBUG
+  #define wxDEBUG_LEVEL 0
+#else
+  #define wxDEBUG_LEVEL 1
+#endif
 
 // wxHandleFatalExceptions() may be used to catch the program faults at run
 // time and, instead of terminating the program with a usual GPF message box,
@@ -1419,14 +1420,8 @@
 // Use wxAccessible for enhanced and customisable accessibility.
 // Depends on wxUSE_OLE on MSW.
 //
-// Default is 1 on MSW, 0 elsewhere.
-//
-// Recommended setting (at present): 1 (MSW-only)
-#ifdef __WXMSW__
+// Set to 1 for Audacity
 #define wxUSE_ACCESSIBILITY 1
-#else
-#define wxUSE_ACCESSIBILITY 0
-#endif
 
 // ----------------------------------------------------------------------------
 // miscellaneous settings
