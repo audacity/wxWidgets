@@ -10,8 +10,7 @@
     <include file="../build/bakefiles/common_samples.bkl"/>
 
     <template id="wx_test">
-        <cppflags>$(CPPUNIT_CFLAGS)</cppflags>
-        <ldflags>$(CPPUNIT_LIBS)</ldflags>
+        <include>$(TOP_SRCDIR)3rdparty/catch/include</include>
 
         <if cond="WX_DISABLE_PRECOMP_HEADERS=='0'">
             <if cond="FORMAT!='autoconf' and PLATFORM_WIN32=='1'">
@@ -84,13 +83,14 @@
             strings/vararg.cpp
             strings/crt.cpp
             strings/vsnprintf.cpp
-            streams/bstream.cpp
+            strings/hexconv.cpp
             streams/datastreamtest.cpp
             streams/ffilestream.cpp
             streams/fileback.cpp
             streams/filestream.cpp
             streams/iostreams.cpp
             streams/largefile.cpp
+            streams/lzmastream.cpp
             streams/memstream.cpp
             streams/socketstream.cpp
             streams/sstream.cpp
@@ -181,7 +181,10 @@
             graphics/affinematrix.cpp
             graphics/boundingbox.cpp
             graphics/clippingbox.cpp
+            graphics/graphmatrix.cpp
+            graphics/graphpath.cpp
             config/config.cpp
+            controls/auitest.cpp
             controls/bitmapcomboboxtest.cpp
             controls/bitmaptogglebuttontest.cpp
             controls/bookctrlbasetest.cpp
@@ -220,6 +223,7 @@
             controls/slidertest.cpp
             controls/spinctrldbltest.cpp
             controls/spinctrltest.cpp
+            controls/styledtextctrltest.cpp
             controls/textctrltest.cpp
             controls/textentrytest.cpp
             controls/togglebuttontest.cpp
@@ -248,6 +252,7 @@
             image/rawbmp.cpp
             html/htmlparser.cpp
             html/htmlwindow.cpp
+            html/htmprint.cpp
             menu/accelentry.cpp
             menu/menu.cpp
             misc/guifuncs.cpp
@@ -261,11 +266,15 @@
                 applications.
              -->
             net/socket.cpp
+            persistence/tlw.cpp
+            persistence/dataview.cpp
+            rowheightcache/rowheightcachetest.cpp
             sizers/boxsizer.cpp
             sizers/gridsizer.cpp
             sizers/wrapsizer.cpp
             toplevel/toplevel.cpp
             validators/valnum.cpp
+            validators/valtext.cpp
             window/clientsize.cpp
             window/setsize.cpp
             xml/xrctest.cpp
@@ -274,14 +283,15 @@
             Can't use <wx-lib> here as it doesn't work with conditionally
             defined variables, so fall back <sys-lib> as we must not link with
             inexisting webview library to be able to run tests even if
-            wxWebView is not available.
+            wxWebView or wxSTC is not available.
          -->
         <sys-lib>$(WXLIB_WEBVIEW)</sys-lib>
+        <sys-lib>$(WXLIB_STC)</sys-lib>
+        <wx-lib>aui</wx-lib>
         <wx-lib>richtext</wx-lib>
         <wx-lib>media</wx-lib>
         <wx-lib>xrc</wx-lib>
         <wx-lib>xml</wx-lib>
-        <wx-lib>adv</wx-lib>
         <wx-lib>html</wx-lib>
         <wx-lib>core</wx-lib>
         <wx-lib>net</wx-lib>
@@ -291,9 +301,9 @@
 
     <wx-data id="data">
         <files>testdata.fc</files>
-        
+
         <!-- test data for image/image.cpp test unit: -->
-        <files>horse.ani  horse.bmp  horse.cur  horse.gif  horse.ico  horse.jpg  
+        <files>horse.ani  horse.bmp  horse.cur  horse.gif  horse.ico  horse.jpg
                horse.pcx  horse.png  horse.pnm  horse.tga  horse.tif  horse.xpm</files>
     </wx-data>
 
@@ -319,6 +329,11 @@
             horse_box_average_100x100.png
             horse_box_average_150x150.png
             horse_box_average_300x300.png
+
+            cross_bicubic_256x256.png
+            cross_bilinear_256x256.png
+            cross_box_average_256x256.png
+            cross_nearest_neighb_256x256.png
         </files>
     </wx-data>
 
@@ -333,16 +348,11 @@
 
 
     <fragment format="autoconf">
-# notice the ugly hack with using CXXWARNINGS: we can't use CPPFLAGS as
-# currently the value in the makefile would be ignored if we did, but
-# warnings don't matter when we expect compilation to fail anyhow so we can
-# use this variable to enable the compilation of code which is supposed to
-# fail
 failtest: failtest_combobox failtest_evthandler failtest_weakref
 
 failtest_combobox:
 	@$(RM) test_gui_comboboxtest.o
-	if $(MAKE) CXXWARNINGS=-DTEST_INVALID_COMBOBOX_ISEMPTY test_gui_comboboxtest.o 2>/dev/null; then \
+	if $(MAKE) CPPFLAGS=-DTEST_INVALID_COMBOBOX_ISEMPTY test_gui_comboboxtest.o 2>/dev/null; then \
 	    echo "*** Compilation with TEST_INVALID_COMBOBOX_ISEMPTY unexpectedly succeeded.">&amp;2; \
 	    exit 1; \
 	fi; \
@@ -350,9 +360,9 @@ failtest_combobox:
 
 failtest_evthandler:
 	@$(RM) test_evthandler.o
-	@for d in GLOBAL STATIC METHOD FUNCTOR NO_HANDLER DERIVED WRONG_CLASS; do \
-	    if $(MAKE) CXXWARNINGS=-DTEST_INVALID_BIND_$$d test_evthandler.o 2>/dev/null; then \
-	        echo "*** Compilation with TEST_INVALID_BIND_$$d unexpectedly succeeded.">&amp;2; \
+	@for d in BIND_GLOBAL BIND_STATIC BIND_METHOD BIND_FUNCTOR BIND_NO_HANDLER BIND_DERIVED BIND_WRONG_CLASS EVENT_CREATION; do \
+	    if $(MAKE) CPPFLAGS=-DTEST_INVALID_$$d test_evthandler.o 2>/dev/null; then \
+	        echo "*** Compilation with TEST_INVALID_$$d unexpectedly succeeded.">&amp;2; \
 	        exit 1; \
 	    fi; \
 	done; \
@@ -360,13 +370,13 @@ failtest_evthandler:
 
 failtest_weakref:
 	@$(RM) test_weakref.o
-	if $(MAKE) CXXWARNINGS=-DTEST_INVALID_INCOMPLETE_WEAKREF test_weakref.o 2>/dev/null; then \
+	if $(MAKE) CPPFLAGS=-DTEST_INVALID_INCOMPLETE_WEAKREF test_weakref.o 2>/dev/null; then \
 	    echo "*** Compilation with TEST_INVALID_INCOMPLETE_WEAKREF unexpectedly succeeded.">&amp;2; \
 	    exit 1; \
 	fi; \
 	exit 0
 
-.PHONY: failtest
+.PHONY: failtest failtest_combobox failtest_evthandler failtest_weakref
     </fragment>
 
 </makefile>

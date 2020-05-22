@@ -43,6 +43,7 @@ private:
         CPPUNIT_TEST( StdFind );
         CPPUNIT_TEST( StdFindFirst );
         CPPUNIT_TEST( StdFindLast );
+        CPPUNIT_TEST( StdStartsEndsWith );
         CPPUNIT_TEST( StdInsert );
         CPPUNIT_TEST( StdReplace );
         CPPUNIT_TEST( StdRFind );
@@ -65,6 +66,7 @@ private:
     void StdFind();
     void StdFindFirst();
     void StdFindLast();
+    void StdStartsEndsWith();
     void StdInsert();
     void StdReplace();
     void StdRFind();
@@ -396,6 +398,28 @@ void StdStringTestCase::StdFindLast()
     CPPUNIT_ASSERT( s1.find_last_of(wxT("a"), 18) == 18u );
 }
 
+void StdStringTestCase::StdStartsEndsWith()
+{
+    const wxString s(wxT("Hello, world!"));
+    CPPUNIT_ASSERT_EQUAL( true, s.starts_with(wxT("Hello")) );
+    CPPUNIT_ASSERT_EQUAL( true, s.starts_with(wxT("Hello, ")) );
+    CPPUNIT_ASSERT_EQUAL( true, s.starts_with(wxT("Hello, world!")) );
+    CPPUNIT_ASSERT_EQUAL( false, s.starts_with(wxT("Hello, world!!!")) );
+    CPPUNIT_ASSERT_EQUAL( true, s.starts_with(wxT("")) );
+    CPPUNIT_ASSERT_EQUAL( false, s.starts_with(wxT("Goodbye")) );
+    CPPUNIT_ASSERT_EQUAL( false, s.starts_with(wxT("Hi")) );
+
+    CPPUNIT_ASSERT_EQUAL( true, s.ends_with(wxT("Hello, world!")) );
+    CPPUNIT_ASSERT_EQUAL( true, s.ends_with(wxT("world!")) );
+    CPPUNIT_ASSERT_EQUAL( false, s.ends_with(wxT("Hello")) );
+    CPPUNIT_ASSERT_EQUAL( true, s.ends_with(wxT("!")) );
+    CPPUNIT_ASSERT_EQUAL( true, s.ends_with(wxT("")) );
+    CPPUNIT_ASSERT_EQUAL( false, s.ends_with(wxT("very long string")) );
+    CPPUNIT_ASSERT_EQUAL( false, s.ends_with(wxT("?")) );
+    CPPUNIT_ASSERT_EQUAL( false, s.ends_with(wxT("Hello, world")) );
+    CPPUNIT_ASSERT_EQUAL( false, s.ends_with(wxT("Gello, world!")) );
+}
+
 void StdStringTestCase::StdInsert()
 {
     wxString s1, s2, s3, s4, s5, s6, s7, s8, s9, s10;
@@ -593,7 +617,7 @@ void StdStringTestCase::StdConversion()
     // notice that implicit wxString -> std::string conversion is only
     // available in wxUSE_STL case, because it conflicts with conversion to
     // const char*/wchar_t*
-#if wxUSE_STL
+#if wxUSE_STL && wxUSE_UNSAFE_WXSTRING_CONV
     std::string s5 = s4;
 #else
     std::string s5 = s4.ToStdString();
@@ -607,8 +631,10 @@ void StdStringTestCase::StdConversion()
 #endif
     CPPUNIT_ASSERT_EQUAL( "hello", s6 );
 
+#if wxUSE_UNSAFE_WXSTRING_CONV
     std::string s7(s4);
     CPPUNIT_ASSERT( s7 == "hello" );
+#endif
 
     wxStdWideString s8(s4);
     CPPUNIT_ASSERT( s8 == "hello" );

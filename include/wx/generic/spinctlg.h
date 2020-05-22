@@ -52,7 +52,7 @@ public:
                 const wxString& value = wxEmptyString,
                 const wxPoint& pos = wxDefaultPosition,
                 const wxSize& size = wxDefaultSize,
-                long style = wxSP_ARROW_KEYS | wxALIGN_RIGHT,
+                long style = wxSP_ARROW_KEYS,
                 double min = 0, double max = 100, double initial = 0,
                 double inc = 1,
                 const wxString& name = wxT("wxSpinCtrl"));
@@ -111,7 +111,7 @@ protected:
 
 #ifdef __WXMSW__
     // and, for MSW, enabling this window itself
-    virtual void DoEnable(bool enable);
+    virtual void DoEnable(bool enable) wxOVERRIDE;
 #endif // __WXMSW__
 
     enum SendEvent
@@ -192,7 +192,7 @@ public:
                 const wxString& value = wxEmptyString,
                 const wxPoint& pos = wxDefaultPosition,
                 const wxSize& size = wxDefaultSize,
-                long style = wxSP_ARROW_KEYS | wxALIGN_RIGHT,
+                long style = wxSP_ARROW_KEYS,
                 double min = 0, double max = 100, double initial = 0,
                 double inc = 1,
                 const wxString& name = wxT("wxSpinCtrl"))
@@ -288,7 +288,7 @@ public:
                const wxString& value = wxEmptyString,
                const wxPoint& pos = wxDefaultPosition,
                const wxSize& size = wxDefaultSize,
-               long style = wxSP_ARROW_KEYS | wxALIGN_RIGHT,
+               long style = wxSP_ARROW_KEYS,
                int min = 0, int max = 100, int initial = 0,
                const wxString& name = wxT("wxSpinCtrl"))
     {
@@ -302,7 +302,7 @@ public:
                 const wxString& value = wxEmptyString,
                 const wxPoint& pos = wxDefaultPosition,
                 const wxSize& size = wxDefaultSize,
-                long style = wxSP_ARROW_KEYS | wxALIGN_RIGHT,
+                long style = wxSP_ARROW_KEYS,
                 int min = 0, int max = 100, int initial = 0,
                 const wxString& name = wxT("wxSpinCtrl"))
     {
@@ -359,7 +359,7 @@ public:
                      const wxString& value = wxEmptyString,
                      const wxPoint& pos = wxDefaultPosition,
                      const wxSize& size = wxDefaultSize,
-                     long style = wxSP_ARROW_KEYS | wxALIGN_RIGHT,
+                     long style = wxSP_ARROW_KEYS,
                      double min = 0, double max = 100, double initial = 0,
                      double inc = 1,
                      const wxString& name = wxT("wxSpinCtrlDouble"))
@@ -375,11 +375,12 @@ public:
                 const wxString& value = wxEmptyString,
                 const wxPoint& pos = wxDefaultPosition,
                 const wxSize& size = wxDefaultSize,
-                long style = wxSP_ARROW_KEYS | wxALIGN_RIGHT,
+                long style = wxSP_ARROW_KEYS,
                 double min = 0, double max = 100, double initial = 0,
                 double inc = 1,
                 const wxString& name = wxT("wxSpinCtrlDouble"))
     {
+        DetermineDigits(inc);
         return wxSpinCtrlGenericBase::Create(parent, id, value, pos, size,
                                              style, min, max, initial,
                                              inc, name);
@@ -393,7 +394,7 @@ public:
     unsigned GetDigits() const { return m_digits; }
 
     // operations
-    void SetValue(const wxString& value)
+    void SetValue(const wxString& value) wxOVERRIDE
         { wxSpinCtrlGenericBase::SetValue(value); }
     void SetValue(double value)                 { DoSetValue(value, SendEvent_None); }
     void SetRange(double minVal, double maxVal) { DoSetRange(minVal, maxVal); }
@@ -402,14 +403,15 @@ public:
 
     // We don't implement bases support for floating point numbers, this is not
     // very useful in practice.
-    virtual int GetBase() const { return 10; }
-    virtual bool SetBase(int WXUNUSED(base)) { return 0; }
+    virtual int GetBase() const wxOVERRIDE { return 10; }
+    virtual bool SetBase(int WXUNUSED(base)) wxOVERRIDE { return false; }
 
 protected:
-    virtual void DoSendEvent();
+    virtual void DoSendEvent() wxOVERRIDE;
 
-    virtual bool DoTextToValue(const wxString& text, double *val);
-    virtual wxString DoValueToText(double val);
+    virtual bool DoTextToValue(const wxString& text, double *val) wxOVERRIDE;
+    virtual wxString DoValueToText(double val) wxOVERRIDE;
+    void DetermineDigits(double inc);
 
     unsigned m_digits;
 
@@ -418,7 +420,7 @@ private:
     void Init()
     {
         m_digits = 0;
-        m_format = wxS("%g");
+        m_format = "%0.0f";
     }
 
     wxString m_format;

@@ -130,6 +130,7 @@ public:
     @note Not all of platform-dependant available attributes are implemented in
           wxWidgets. You can set other attributes by using AddAttribute() and
           AddAttribBits() functions inherited from the base wxGLAttribsBase class.
+          While WGL_/GLX_/NS attributes can be added, PFD_ (for MSW) can not.
 
     @since 3.1.0
 
@@ -142,13 +143,14 @@ class wxGLAttributes : public wxGLAttribsBase
 {
 public:
     /**
-        Use true color (8 bits for each color plus 8 bits for alpha channel).
+        Use true colour instead of colour index rendering for each pixel.
+        It makes no effect for OS X.
     */
     wxGLAttributes& RGBA();
 
     /**
-        Specifies the number of bits for buffer when it isn't a RGBA buffer.
-        It makes no effect for OS X.
+        Specifies the number of bits for colour buffer. For RGBA it's
+        normally the sum of the bits per each component.
 
         @param val
         The number of bits.
@@ -164,12 +166,12 @@ public:
     wxGLAttributes& Level(int val);
 
     /**
-        Requests using double buffering if present.
+        Requests using double buffering.
     */
     wxGLAttributes& DoubleBuffer();
 
     /**
-        Use stereoscopic display if present.
+        Use stereoscopic display.
     */
     wxGLAttributes& Stereo();
 
@@ -182,7 +184,8 @@ public:
     wxGLAttributes& AuxBuffers(int val);
 
     /**
-        Specifies the minimal number of bits for colour buffers.
+        Specifies the minimal number of bits for each colour and alpha.
+        On MSW and OSX this function also sets the size of the colour buffer.
 
         @param mRed
         The minimal number of bits for colour red.
@@ -212,7 +215,8 @@ public:
     wxGLAttributes& Stencil(int val);
 
     /**
-        Specifies the minimal number of bits for the accumulation buffer.
+        Specifies the minimal number of bits for each accumulator channel.
+        On MSW and OSX this function also sets the size of the accumulation buffer.
 
         @param mRed
         The minimal number of bits for red accumulator.
@@ -552,7 +556,7 @@ enum
     /// do not use a palette.
     WX_GL_RGBA = 1,
 
-    /// (F) Specifies the number of bits for buffer if not WX_GL_RGBA.
+    /// (F) Specifies the number of bits for colour buffer.
     WX_GL_BUFFER_SIZE,
 
     /// (F) 0 for main buffer, >0 for overlay, <0 for underlay.
@@ -744,6 +748,15 @@ enum
     context to the canvas, and then finally call SwapBuffers() to swap the
     buffers of the OpenGL canvas and thus show your current output.
 
+    Please note that wxGLContext always uses physical pixels, even on the
+    platforms where wxWindow uses logical pixels, affected by the coordinate
+    scaling, on high DPI displays. Thus, if you want to set the OpenGL view
+    port to the size of entire window, you must multiply the result returned by
+    wxWindow::GetClientSize() by wxWindow::GetContentScaleFactor() before
+    passing it to @c glViewport(). Same considerations apply to other OpenGL
+    functions and other coordinates, notably those retrieved from wxMouseEvent
+    in the event handlers.
+
     Notice that versions of wxWidgets previous to 2.9 used to implicitly create a
     wxGLContext inside wxGLCanvas itself. This is still supported in the
     current version but is deprecated now and will be removed in the future,
@@ -816,8 +829,13 @@ public:
         This constructor is still available only for compatibility reasons.
         Please use the constructor with wxGLAttributes instead.
 
-        If @a attribList is not specified, wxGLAttributes::Defaults() is used.
+        If @a attribList is not specified, wxGLAttributes::PlatformDefaults()
+        is used, plus some other attributes (see below).
 
+        @param parent
+            Pointer to a parent window.
+        @param id
+            Window identifier. If -1, will automatically create an identifier.
         @param attribList
             Array of integers. With this parameter you can set the device
             context attributes associated to this window. This array is
@@ -836,6 +854,22 @@ public:
             WX_GL_DOUBLEBUFFER are used. But notice that if you do specify some
             attributes you also need to explicitly include these two default
             attributes in the list if you need them.
+        @param pos
+            Window position. wxDefaultPosition is (-1, -1) which indicates that
+            wxWidgets should generate a default position for the window.
+        @param size
+            Window size. wxDefaultSize is (-1, -1) which indicates that
+            wxWidgets should generate a default size for the window. If no
+            suitable size can be found, the window will be sized to 20x20
+            pixels so that the window is visible but obviously not correctly
+            sized.
+        @param style
+            Window style.
+        @param name
+            Window name.
+        @param palette
+            Palette for indexed colour (i.e. non WX_GL_RGBA) mode. Ignored
+            under most platforms.
     */
     wxGLCanvas(wxWindow* parent, wxWindowID id = wxID_ANY,
                const int* attribList = NULL,
@@ -871,10 +905,10 @@ public:
     static bool IsDisplaySupported(const int* attribList);
 
     /**
-        Returns true if the extension with given name is supported
+        Returns true if the extension with given name is supported.
 
         Notice that while this function is implemented for all of GLX, WGL and
-        AGL the extensions names are usually not the same for different
+        NSOpenGL the extensions names are usually not the same for different
         platforms and so the code using it still usually uses conditional
         compilation.
     */

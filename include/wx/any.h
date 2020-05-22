@@ -41,6 +41,11 @@ union wxAnyValueBuffer
 
     void*   m_ptr;
     wxByte  m_buffer[WX_ANY_VALUE_BUFFER_SIZE];
+
+    wxAnyValueBuffer()
+    {
+        m_ptr = NULL;
+    }
 };
 
 //
@@ -231,8 +236,8 @@ public:
     {
     public:
         DataHolder(const T2& value)
+            : m_value(value)
         {
-            m_value = value;
         }
         virtual ~DataHolder() { }
 
@@ -317,7 +322,7 @@ public:
         return Ops::GetValue(buf);
     }
 #if wxUSE_EXTENDED_RTTI
-    virtual const wxTypeInfo* GetTypeInfo() const 
+    virtual const wxTypeInfo* GetTypeInfo() const
     {
         return wxGetTypeInfo((T*)NULL);
     }
@@ -377,7 +382,7 @@ public: \
         const UseDataType* sptr = \
             reinterpret_cast<const UseDataType*>(voidPtr); \
         return static_cast<T>(*sptr); \
-    } 
+    }
 
 #if wxUSE_EXTENDED_RTTI
 #define WX_ANY_DEFINE_SUB_TYPE(T, CLSTYPE) \

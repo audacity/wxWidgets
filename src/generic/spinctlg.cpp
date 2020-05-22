@@ -32,6 +32,8 @@
 
 #if wxUSE_SPINCTRL
 
+#include "wx/private/spinctrl.h"
+
 wxIMPLEMENT_DYNAMIC_CLASS(wxSpinDoubleEvent, wxNotifyEvent);
 
 // There are port-specific versions for the wxSpinCtrl, so exclude the
@@ -96,6 +98,7 @@ public:
         wxCommandEvent eventCopy(event);
         eventCopy.SetEventObject(m_spin);
         eventCopy.SetId(m_spin->GetId());
+        eventCopy.SetInt(wxAtoi(event.GetString()));
         m_spin->ProcessWindowEvent(eventCopy);
     }
 
@@ -297,7 +300,14 @@ void wxSpinCtrlGenericBase::DoMoveWindow(int x, int y, int width, int height)
     wxControl::DoMoveWindow(x, y, width, height);
 
     // position the subcontrols inside the client area
-    wxSize sizeBtn = m_spinButton->GetSize();
+
+    // Use GetBestSize instead of GetSize to get the size of the spin control.
+    // This fixes a problem on wxMSW when the size is set after a DPI change.
+    // GetSize returns the old, invalid, size. GetBestSize will return the size
+    // that the control should be. Normally, GetBestSize and GetSize should
+    // always return the same value because the size of the spinButton never
+    // changes.
+    wxSize sizeBtn = m_spinButton->GetBestSize();
 
     wxCoord wText = width - sizeBtn.x - MARGIN;
     m_textCtrl->SetSize(0, 0, wText, height);
@@ -409,8 +419,8 @@ void wxSpinCtrlGenericBase::OnSpinButton(wxSpinEvent& event)
 
 void wxSpinCtrlGenericBase::OnTextLostFocus(wxFocusEvent& event)
 {
-    SyncSpinToText(SendEvent_Text);
-    DoSendEvent();
+    if ( SyncSpinToText(SendEvent_Text) )
+        DoSendEvent();
 
     event.Skip();
 }
@@ -646,8 +656,7 @@ wxString wxSpinCtrl::DoValueToText(double val)
     switch ( GetBase() )
     {
         case 16:
-            return wxPrivate::wxSpinCtrlFormatAsHex(static_cast<long>(val),
-                                                    GetMax());
+            return wxSpinCtrlImpl::FormatAsHex(static_cast<long>(val), GetMax());
 
         default:
             wxFAIL_MSG( wxS("Unsupported spin control base") );
@@ -663,6 +672,8 @@ wxString wxSpinCtrl::DoValueToText(double val)
 //-----------------------------------------------------------------------------
 // wxSpinCtrlDouble
 //-----------------------------------------------------------------------------
+
+#define SPINCTRLDBL_MAX_DIGITS 20
 
 wxIMPLEMENT_DYNAMIC_CLASS(wxSpinCtrlDouble, wxSpinCtrlGenericBase);
 
@@ -687,7 +698,7 @@ wxString wxSpinCtrlDouble::DoValueToText(double val)
 
 void wxSpinCtrlDouble::SetDigits(unsigned digits)
 {
-    wxCHECK_RET( digits <= 20, "too many digits for wxSpinCtrlDouble" );
+    wxCHECK_RET( digits <= SPINCTRLDBL_MAX_DIGITS, "too many digits for wxSpinCtrlDouble" );
 
     if ( digits == m_digits )
         return;
@@ -697,6 +708,16 @@ void wxSpinCtrlDouble::SetDigits(unsigned digits)
     m_format.Printf(wxT("%%0.%ulf"), digits);
 
     DoSetValue(m_value, SendEvent_None);
+}
+
+void wxSpinCtrlDouble::DetermineDigits(double inc)
+{
+    inc = fabs(inc);
+    if ( inc > 0.0 && inc < 1.0 )
+    {
+        m_digits = wxMin(SPINCTRLDBL_MAX_DIGITS, -static_cast<int>(floor(log10(inc))));
+        m_format.Printf("%%0.%ulf", m_digits);
+    }
 }
 
 #endif // wxUSE_SPINBTN

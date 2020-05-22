@@ -136,7 +136,7 @@ inline bool wxIsNullDouble(double x) { return wxIsSameDouble(x, 0.); }
 
 inline int wxRound(double x)
 {
-    wxASSERT_MSG( x > INT_MIN - 0.5 && x < INT_MAX + 0.5,
+    wxASSERT_MSG( x > (double)INT_MIN - 0.5 && x < (double)INT_MAX + 0.5,
                   wxT("argument out of supported range") );
 
     #if defined(HAVE_ROUND)
@@ -149,6 +149,9 @@ inline int wxRound(double x)
 // Convert between degrees and radians.
 inline double wxDegToRad(double deg) { return (deg * M_PI) / 180.0; }
 inline double wxRadToDeg(double rad) { return (rad * 180.0) / M_PI; }
+
+// Count trailing zeros.
+WXDLLIMPEXP_BASE unsigned int wxCTZ(wxUint32 x);
 
 #endif /* __cplusplus */
 

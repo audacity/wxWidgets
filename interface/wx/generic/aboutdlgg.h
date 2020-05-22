@@ -34,7 +34,7 @@
         aboutInfo.SetName("MyApp");
         aboutInfo.SetVersion(MY_APP_VERSION_STRING);
         aboutInfo.SetDescription(_("My wxWidgets-based application!"));
-        aboutInfo.SetCopyright("(C) 1992-2016");
+        aboutInfo.SetCopyright("(C) 1992-2020");
         aboutInfo.SetWebSite("http://myapp.org");
         aboutInfo.AddDeveloper("My Self");
 
@@ -43,7 +43,7 @@
     }
     @endcode
 
-    @library{wxadv}
+    @library{wxcore}
     @category{cmndlg}
 
     @see wxAboutDialogInfo

@@ -276,6 +276,8 @@ private:
     wxTextCtrl *m_textCheckBox;
     wxCheckBox *m_initialValueCheckBox;
     wxTextCtrl *m_textDetailed;
+    wxTextCtrl *m_textFooter;
+    wxChoice *m_iconsFooter;
 
     wxDECLARE_EVENT_TABLE();
 };
@@ -389,6 +391,7 @@ public:
 
 #if wxUSE_INFOBAR
     void InfoBarSimple(wxCommandEvent& event);
+    void InfoBarSimpleWrapped(wxCommandEvent &event);
     void InfoBarAdvanced(wxCommandEvent& event);
 #endif // wxUSE_INFOBAR
 
@@ -452,6 +455,10 @@ public:
 
 #if wxUSE_PROGRESSDLG
     void ShowProgress(wxCommandEvent& event);
+#ifdef wxHAS_NATIVE_PROGRESSDIALOG
+    void ShowProgressGeneric(wxCommandEvent& event);
+#endif // wxHAS_NATIVE_PROGRESSDIALOG
+    void DoShowProgress(wxGenericProgressDialog& dialog);
 #endif // wxUSE_PROGRESSDLG
     void ShowAppProgress(wxCommandEvent& event);
 
@@ -500,6 +507,11 @@ public:
     void OnExit(wxCommandEvent& event);
 
 private:
+#if wxUSE_COLOURDLG
+    void OnColourChanged(wxColourDialogEvent& event);
+    void DoApplyColour(const wxColour& colour);
+#endif // wxUSE_COLOURDLG
+
 #if wxUSE_DIRDLG
     void DoDirChoose(int style);
 #endif // wxUSE_DIRDLG
@@ -587,6 +599,7 @@ enum
     DIALOGS_NUM_ENTRY,
     DIALOGS_LOG_DIALOG,
     DIALOGS_INFOBAR_SIMPLE,
+    DIALOGS_INFOBAR_SIMPLE_WRAPPED,
     DIALOGS_INFOBAR_ADVANCED,
     DIALOGS_MODAL,
     DIALOGS_MODELESS,
@@ -596,6 +609,7 @@ enum
     DIALOGS_ONTOP,
     DIALOGS_MODELESS_BTN,
     DIALOGS_PROGRESS,
+    DIALOGS_PROGRESS_GENERIC,
     DIALOGS_APP_PROGRESS,
     DIALOGS_ABOUTDLG_SIMPLE,
     DIALOGS_ABOUTDLG_FANCY,

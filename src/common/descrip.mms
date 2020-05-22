@@ -2,33 +2,33 @@
 #                                                                            *
 # Make file for VMS                                                          *
 # Author : J.Jansen (joukj@hrem.nano.tudelft.nl)                             *
-# Date : 14 June 2016                                                        *
+# Date : 4 March 2020                                                        *
 #                                                                            *
 #*****************************************************************************
 .first
 	define wx [--.include.wx]
 
 .ifdef __WXMOTIF__
-CXX_DEFINE = /define=(__WXMOTIF__=1)/name=(as_is,short)\
+CXX_DEFINE = /define=(__WXMOTIF__=1,WXBUILDING=1)/name=(as_is,short)\
 	   /assume=(nostdnew,noglobal_array_new)/incl=[-.regex]
-CC_DEFINE = /define=(__WXMOTIF__=1)/name=(as_is,short)/incl=[-.regex]
+CC_DEFINE = /define=(__WXMOTIF__=1,WXBUILDING=1)/name=(as_is,short)/incl=[-.regex]
 .else
 .ifdef __WXGTK__
-CXX_DEFINE = /define=(__WXGTK__=1)/float=ieee/name=(as_is,short)/ieee=denorm\
+CXX_DEFINE = /define=(__WXGTK__=1,WXBUILDING=1)/float=ieee/name=(as_is,short)/ieee=denorm\
 	   /assume=(nostdnew,noglobal_array_new)/incl=[-.regex]
-CC_DEFINE = /define=(__WXGTK__=1)/float=ieee/name=(as_is,short)/ieee=denorm\
+CC_DEFINE = /define=(__WXGTK__=1,WXBUILDING=1)/float=ieee/name=(as_is,short)/ieee=denorm\
 	/incl=[-.regex]
 .else
 .ifdef __WXGTK2__
-CXX_DEFINE = /define=(__WXGTK__=1,VMS_GTK2=1)/float=ieee/name=(as_is,short)/ieee=denorm\
+CXX_DEFINE = /define=(__WXGTK__=1,VMS_GTK2=1,WXBUILDING=1)/float=ieee/name=(as_is,short)/ieee=denorm\
 	   /assume=(nostdnew,noglobal_array_new)/incl=[-.regex]
-CC_DEFINE = /define=(__WXGTK__=1,VMS_GTK2=1)/float=ieee/name=(as_is,short)\
+CC_DEFINE = /define=(__WXGTK__=1,VMS_GTK2=1,WXBUILDING=1)/float=ieee/name=(as_is,short)\
 	/ieee=denorm/incl=[-.regex]
 .else
 .ifdef __WXX11__
-CXX_DEFINE = /define=(__WXX11__=1,__WXUNIVERSAL__==1)/float=ieee\
+CXX_DEFINE = /define=(__WXX11__=1,__WXUNIVERSAL__==1,WXBUILDING=1)/float=ieee\
 	/name=(as_is,short)/assume=(nostdnew,noglobal_array_new)/incl=[-.regex]
-CC_DEFINE = /define=(__WXX11__=1,__WXUNIVERSAL__==1)/float=ieee\
+CC_DEFINE = /define=(__WXX11__=1,__WXUNIVERSAL__==1,WXBUILDING=1)/float=ieee\
 	/name=(as_is,short)/incl=[-.regex]
 .else
 CXX_DEFINE =
@@ -89,7 +89,6 @@ OBJECTS = \
 		docmdi.obj,\
 		docview.obj,\
 		dpycmn.obj,\
-		dynarray.obj,\
 		dynlib.obj,\
 		encconv.obj,\
 		event.obj,\
@@ -177,6 +176,7 @@ OBJECTS1=fs_inet.obj,\
 		stream.obj,\
 		string.obj,\
 		stringimpl.obj,\
+		stringops.obj,\
 		strvararg.obj,\
 		sysopt.obj
 
@@ -235,7 +235,7 @@ OBJECTS_X11=accesscmn.obj,dndcmn.obj,dpycmn.obj,dseldlg.obj,\
 	dynload.obj,effects.obj,fddlgcmn.obj,fs_mem.obj,\
 	gbsizer.obj,geometry.obj,matrix.obj,radiocmn.obj,\
 	taskbarcmn.obj,xti.obj,xtistrm.obj,xtixml.obj,\
-	combocmn.obj
+	combocmn.obj,cairo.obj
 
 
 OBJECTS_GTK2=fontutilcmn.obj,cairo.obj
@@ -280,7 +280,6 @@ SOURCES = \
 		docmdi.cpp,\
 		docview.cpp,\
 		dpycmn.cpp,\
-		dynarray.cpp,\
 		dynlib.cpp,\
 		encconv.cpp,\
 		event.cpp,\
@@ -378,6 +377,7 @@ SOURCES = \
 		sysopt.cpp,\
 		string.cpp,\
 		stringimpl.cpp,\
+		stringops.cpp,\
 		tbarbase.cpp,\
 		textbuf.cpp,\
 		textcmn.cpp,\
@@ -521,7 +521,6 @@ dlgcmn.obj : dlgcmn.cpp
 dobjcmn.obj : dobjcmn.cpp
 docmdi.obj : docmdi.cpp
 docview.obj : docview.cpp
-dynarray.obj : dynarray.cpp
 dynlib.obj : dynlib.cpp
 encconv.obj : encconv.cpp
 event.obj : event.cpp
@@ -617,6 +616,7 @@ strvararg.obj : strvararg.cpp
 sysopt.obj : sysopt.cpp
 string.obj : string.cpp
 stringimpl.obj : stringimpl.cpp
+stringops.obj : stringops.cpp
 tbarbase.obj : tbarbase.cpp
 textbuf.obj : textbuf.cpp
 textcmn.obj : textcmn.cpp
@@ -639,7 +639,9 @@ wincmn.obj : wincmn.cpp
 wxcrt.obj : wxcrt.cpp
 xpmdecod.obj : xpmdecod.cpp
 zipstrm.obj : zipstrm.cpp
+	cxx$(CXX_DEFINE)/warn=disable=(MACROREDEF)/obj=zipstrm.obj zipstrm.cpp
 zstream.obj : zstream.cpp
+	cxx$(CXX_DEFINE)/warn=disable=(MACROREDEF)/obj=zstream.obj zstream.cpp
 accesscmn.obj : accesscmn.cpp
 dndcmn.obj : dndcmn.cpp
 dpycmn.obj : dpycmn.cpp

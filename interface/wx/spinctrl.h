@@ -21,12 +21,12 @@
         for dialog navigation (e.g. activating the default button in the
         dialog) under MSW.
     @style{wxALIGN_LEFT}
-        Same as wxTE_LEFT for wxTextCtrl: the text is left aligned.
+        Same as wxTE_LEFT for wxTextCtrl: the text is left aligned (this is the
+        default).
     @style{wxALIGN_CENTRE_HORIZONTAL}
         Same as wxTE_CENTRE for wxTextCtrl: the text is centered.
     @style{wxALIGN_RIGHT}
-        Same as wxTE_RIGHT for wxTextCtrl: the text is right aligned (this is
-        the default).
+        Same as wxTE_RIGHT for wxTextCtrl: the text is right aligned.
     @endStyleTable
 
 
@@ -110,7 +110,8 @@ public:
                 const wxString& value = wxEmptyString,
                 const wxPoint& pos = wxDefaultPosition,
                 const wxSize& size = wxDefaultSize,
-                long style = wxSP_ARROW_KEYS, int min = 0, int max = 100,
+                long style = wxSP_ARROW_KEYS,
+                int min = 0, int max = 100,
                 int initial = 0, const wxString& name = "wxSpinCtrl");
 
     /**
@@ -260,6 +261,10 @@ public:
         @param name
             Window name.
 
+        The precision (number of digits after the decimal point) of the value
+        of the spin control is derived from the precision of @a inc.
+        If necessary, default precision can be adjusted by call to SetDigits().
+
         @see Create()
     */
     wxSpinCtrlDouble(wxWindow* parent, wxWindowID id = -1,
@@ -284,7 +289,7 @@ public:
                 const wxString& name = "wxSpinCtrlDouble");
 
     /**
-        Gets the number of digits in the display.
+        Gets precision of the value of the spin control.
     */
     unsigned int GetDigits() const;
 
@@ -309,14 +314,15 @@ public:
     double GetValue() const;
 
     /**
-        Sets the number of digits in the display.
+        Sets precision of the value of the spin control.
+        Up to 20 digits are allowed after the decimal point.
     */
     void SetDigits(unsigned int digits);
 
     /**
         Sets the increment value.
-        @note You may also need to increase the number of visible digits
-        using SetDigits
+        @note You may also need to change the precision of the value
+        using SetDigits().
     */
     void SetIncrement(double inc);
 

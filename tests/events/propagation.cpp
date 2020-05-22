@@ -30,6 +30,7 @@
 #include "wx/scopeguard.h"
 #include "wx/toolbar.h"
 #include "wx/uiaction.h"
+#include "wx/stopwatch.h"
 
 // FIXME: Currently under OS X testing paint event doesn't work because neither
 //        calling Refresh()+Update() nor even sending wxPaintEvent directly to
@@ -37,7 +38,7 @@
 //        some tests there. But this should be fixed and the tests reenabled
 //        because wxPaintEvent propagation in wxScrolledWindow is a perfect
 //        example of fragile code that could be broken under OS X.
-#ifndef __WXOSX__
+#if !defined(__WXOSX__)
     #define CAN_TEST_PAINT_EVENTS
 #endif
 
@@ -66,7 +67,7 @@ public:
 
     // override ProcessEvent() to confirm that it is called for all event
     // handlers in the chain
-    virtual bool ProcessEvent(wxEvent& event)
+    virtual bool ProcessEvent(wxEvent& event) wxOVERRIDE
     {
         if ( event.GetEventType() == m_evtType )
             g_str += 'o'; // "o" == "overridden"
@@ -175,7 +176,8 @@ public:
 #ifdef __WXGTK__
         // We need to map the window, otherwise we're not going to get any
         // paint events for it.
-        wxYield();
+        for ( wxStopWatch sw; sw.Time() < 50; )
+            wxYield();
 
         // Ignore events generated during the initial mapping.
         g_str.clear();
@@ -185,7 +187,7 @@ public:
         Update();
     }
 
-    virtual void OnDraw(wxDC& WXUNUSED(dc))
+    virtual void OnDraw(wxDC& WXUNUSED(dc)) wxOVERRIDE
     {
         g_str += 'D';   // draw
     }
@@ -229,8 +231,8 @@ class EventPropagationTestCase : public CppUnit::TestCase
 public:
     EventPropagationTestCase() {}
 
-    virtual void setUp();
-    virtual void tearDown();
+    virtual void setUp() wxOVERRIDE;
+    virtual void tearDown() wxOVERRIDE;
 
 private:
     CPPUNIT_TEST_SUITE( EventPropagationTestCase );
@@ -243,12 +245,14 @@ private:
         CPPUNIT_TEST( ScrollWindowWithHandler );
 // for unknown reason, this test will cause the tests segmentation failed
 // under x11, disable it for now.
-#if !defined (__WXX11__)
+#if !defined (__WXX11__) && wxUSE_MENUS
         CPPUNIT_TEST( MenuEvent );
 #endif
+#if wxUSE_DOC_VIEW_ARCHITECTURE
         CPPUNIT_TEST( DocView );
+#endif // wxUSE_DOC_VIEW_ARCHITECTURE
         WXUISIM_TEST( ContextMenuEvent );
-        CPPUNIT_TEST( PropagationLevel );
+        WXUISIM_TEST( PropagationLevel );
     CPPUNIT_TEST_SUITE_END();
 
     void OneHandler();
@@ -258,10 +262,16 @@ private:
     void ForwardEvent();
     void ScrollWindowWithoutHandler();
     void ScrollWindowWithHandler();
+#if wxUSE_MENUS
     void MenuEvent();
+#endif
+#if wxUSE_DOC_VIEW_ARCHITECTURE
     void DocView();
+#endif // wxUSE_DOC_VIEW_ARCHITECTURE
+#if wxUSE_UIACTIONSIMULATOR
     void ContextMenuEvent();
     void PropagationLevel();
+#endif
 
     wxDECLARE_NO_COPY_CLASS(EventPropagationTestCase);
 };
@@ -353,7 +363,7 @@ void EventPropagationTestCase::ForwardEvent()
     public:
         ForwardEvtHandler(wxEvtHandler& h) : m_h(&h) { }
 
-        virtual bool ProcessEvent(wxEvent& event)
+        virtual bool ProcessEvent(wxEvent& event) wxOVERRIDE
         {
             g_str += 'f';
 
@@ -418,6 +428,8 @@ void EventPropagationTestCase::ScrollWindowWithHandler()
     CPPUNIT_ASSERT_EQUAL( "apA", g_str );
 }
 
+#if wxUSE_MENUS
+
 // Create a menu bar with a single menu containing wxID_APPLY menu item and
 // attach it to the specified frame.
 wxMenu* CreateTestMenu(wxFrame* frame)
@@ -434,24 +446,17 @@ wxMenu* CreateTestMenu(wxFrame* frame)
 // Helper for checking that the menu event processing resulted in the expected
 // output from the handlers.
 //
-// Notice that this is supposed to be used with ASSERT_MENU_EVENT_RESULT()
-// macro to make the file name and line number of the caller appear in the
-// failure messages.
-void
-CheckMenuEvent(wxMenu* menu, const char* result, CppUnit::SourceLine sourceLine)
-{
-    g_str.clear();
-
-    // Trigger the menu event: this is more reliable than using
-    // wxUIActionSimulator and currently works in all ports as they all call
-    // wxMenuBase::SendEvent() from their respective menu event handlers.
-    menu->SendEvent(wxID_APPLY);
-
-    CPPUNIT_NS::assertEquals( result, g_str, sourceLine, "" );
-}
+// Note that we trigger the menu event by sending it directly as this is more
+// reliable than using wxUIActionSimulator and currently works in all ports as
+// they all call wxMenuBase::SendEvent() from their respective menu event
+// handlers.
+#define ASSERT_MENU_EVENT_RESULT_FOR(cmd, menu, result) \
+    g_str.clear();                                      \
+    menu->SendEvent(cmd);                               \
+    CHECK( g_str == result )
 
 #define ASSERT_MENU_EVENT_RESULT(menu, result) \
-    CheckMenuEvent((menu), (result), CPPUNIT_SOURCELINE())
+    ASSERT_MENU_EVENT_RESULT_FOR(wxID_APPLY, menu, result)
 
 void EventPropagationTestCase::MenuEvent()
 {
@@ -475,6 +480,17 @@ void EventPropagationTestCase::MenuEvent()
     ASSERT_MENU_EVENT_RESULT( menu, "aomA" );
 
 
+    // Check that a handler can also be attached to a submenu.
+    wxMenu* const submenu = new wxMenu;
+    submenu->Append(wxID_ABOUT);
+    menu->Append(wxID_ANY, "Submenu", submenu);
+
+    TestMenuEvtHandler hs('s'); // 's' for "submenu"
+    submenu->SetNextHandler(&hs);
+    wxON_BLOCK_EXIT_OBJ1( *submenu,
+                          wxEvtHandler::SetNextHandler, (wxEvtHandler*)NULL );
+    ASSERT_MENU_EVENT_RESULT_FOR( wxID_ABOUT, submenu, "aosomA" );
+
     // Test that the event handler associated with the menu bar gets the event.
     TestMenuEvtHandler hb('b'); // 'b' for "menu Bar"
     mb->PushEventHandler(&hb);
@@ -490,6 +506,9 @@ void EventPropagationTestCase::MenuEvent()
 
     ASSERT_MENU_EVENT_RESULT( menu, "aomobowA" );
 }
+#endif
+
+#if wxUSE_DOC_VIEW_ARCHITECTURE
 
 // Minimal viable implementations of wxDocument and wxView.
 class EventTestDocument : public wxDocument
@@ -505,7 +524,7 @@ class EventTestView : public wxView
 public:
     EventTestView() { }
 
-    virtual void OnDraw(wxDC*) { }
+    virtual void OnDraw(wxDC*) wxOVERRIDE { }
 
     wxDECLARE_DYNAMIC_CLASS(EventTestView);
 };
@@ -601,6 +620,8 @@ void EventPropagationTestCase::DocView()
     CPPUNIT_ASSERT_EQUAL( "advmcpA", g_str );
 #endif // wxUSE_TOOLBAR
 }
+
+#endif // wxUSE_DOC_VIEW_ARCHITECTURE
 
 #if wxUSE_UIACTIONSIMULATOR
 

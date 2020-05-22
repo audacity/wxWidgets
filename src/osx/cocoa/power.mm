@@ -15,8 +15,8 @@
 
 #include "wx/power.h"
 #include "wx/atomic.h"
-#include "wx/platinfo.h"
 #include "wx/osx/private.h"
+#include "wx/osx/private/available.h"
 
 #include <IOKit/pwr_mgt/IOPMLib.h>
 
@@ -38,7 +38,7 @@ bool UpdatePowerResourceUsage(wxPowerResourceKind kind, const wxString& reason)
             cfreason = wxString("User Activity");
 
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_9
-        if ( wxPlatformInfo::Get().CheckOSVersion(10, 9) )
+        if ( WX_IS_MACOS_AVAILABLE(10, 9) )
         {
             // Use NSProcessInfo for 10.9 and newer
             if ( !g_processInfoActivity )
@@ -83,7 +83,7 @@ bool UpdatePowerResourceUsage(wxPowerResourceKind kind, const wxString& reason)
     {
         // Release power assertion
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_9
-        if ( wxPlatformInfo::Get().CheckOSVersion(10, 9) )
+        if ( WX_IS_MACOS_AVAILABLE(10, 9) )
         {
             // Use NSProcessInfo for 10.9 and newer
             if ( g_processInfoActivity )
@@ -114,8 +114,8 @@ bool wxPowerResource::Acquire(wxPowerResourceKind kind, const wxString& reason)
 {
     wxAtomicInc(g_powerResourceSystemRefCount);
 
-        bool success = UpdatePowerResourceUsage(kind, reason);
-        if (!success)
+    bool success = UpdatePowerResourceUsage(kind, reason);
+    if (!success)
         wxAtomicDec(g_powerResourceSystemRefCount);
 
     return success;

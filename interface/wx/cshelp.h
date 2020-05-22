@@ -257,8 +257,8 @@ public:
             Button position.
             If ::wxDefaultPosition is specified then a default position is chosen.
         @param size
-            Button size. 
-            If ::wxDefaultSize is specified then the button is sized appropriately 
+            Button size.
+            If ::wxDefaultSize is specified then the button is sized appropriately
             for the question mark bitmap.
         @param style
             Window style.
@@ -271,7 +271,7 @@ public:
                         wxWindowID id = wxID_CONTEXT_HELP,
                         const wxPoint& pos = wxDefaultPosition,
                         const wxSize& size = wxDefaultSize,
-                        long style = wxBU_AUTODRAW);
+                        long style = 0);
 };
 
 

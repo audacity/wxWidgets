@@ -21,6 +21,18 @@
 
 #include <math.h>
 
+namespace Catch
+{
+    template <>
+    struct StringMaker<wxVariant>
+    {
+        static std::string convert(const wxVariant& v)
+        {
+            return v.MakeString().ToStdString(wxConvUTF8);
+        }
+    };
+}
+
 // ----------------------------------------------------------------------------
 // test class
 // ----------------------------------------------------------------------------
@@ -475,15 +487,15 @@ public:
         m_value = value;
     }
 
-    virtual bool Eq(wxVariantData& WXUNUSED(data)) const
+    virtual bool Eq(wxVariantData& WXUNUSED(data)) const wxOVERRIDE
     {
         return false;
     }
 
     // What type is it? Return a string name.
-    virtual wxString GetType() const { return "MyClass"; }
+    virtual wxString GetType() const wxOVERRIDE { return "MyClass"; }
 
-    virtual wxVariantData* Clone() const
+    virtual wxVariantData* Clone() const wxOVERRIDE
     {
         return new wxMyVariantData(m_value);
     }
@@ -666,7 +678,7 @@ public:
 
     virtual bool ConvertValue(const wxAnyValueBuffer& src,
                               wxAnyValueType* dstType,
-                              wxAnyValueBuffer& dst) const
+                              wxAnyValueBuffer& dst) const wxOVERRIDE
     {
         MyClass value = GetValue(src);
 

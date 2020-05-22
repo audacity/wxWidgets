@@ -11,12 +11,14 @@
 #ifndef _WX_RADIOBOX_H_
 #define _WX_RADIOBOX_H_
 
+#include "wx/containr.h"
+
 // List box item
 class WXDLLIMPEXP_FWD_CORE wxBitmap ;
 
 class WXDLLIMPEXP_FWD_CORE wxRadioButton ;
 
-class WXDLLIMPEXP_CORE wxRadioBox: public wxControl, public wxRadioBoxBase
+class WXDLLIMPEXP_CORE wxRadioBox: public wxNavigationEnabled<wxControl>, public wxRadioBoxBase
 {
     wxDECLARE_DYNAMIC_CLASS(wxRadioBox);
 public:
@@ -71,9 +73,6 @@ public:
 
     virtual wxString GetString(unsigned int item) const wxOVERRIDE;
     virtual void SetString(unsigned int item, const wxString& label) wxOVERRIDE;
-
-    virtual wxString GetLabel() const wxOVERRIDE;
-    virtual void SetLabel(const wxString& label) wxOVERRIDE;
 
     // protect native font of box
     virtual bool SetFont( const wxFont &font ) wxOVERRIDE;

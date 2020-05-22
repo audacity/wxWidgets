@@ -4,7 +4,7 @@
 // Author:      Vadim Zeitlin
 // Modified by:
 // Created:     2005-01-09
-// Copyright:   (c) 2005 Vadim Zeitlin <vadim@wxwindows.org>
+// Copyright:   (c) 2005 Vadim Zeitlin <vadim@wxwidgets.org>
 // Licence:     wxWindows licence
 /////////////////////////////////////////////////////////////////////////////
 
@@ -74,11 +74,9 @@ WXDWORD wxDatePickerCtrl::MSWGetStyle(long style, WXDWORD *exstyle) const
         styleMSW |= DTS_UPDOWN;
     //else: drop down by default
 
-#ifdef DTS_SHORTDATECENTURYFORMAT
     if ( style & wxDP_SHOWCENTURY )
         styleMSW |= DTS_SHORTDATECENTURYFORMAT;
     else
-#endif // DTS_SHORTDATECENTURYFORMAT
         styleMSW |= DTS_SHORTDATEFORMAT;
 
     if ( style & wxDP_ALLOWNONE )

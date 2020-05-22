@@ -29,7 +29,7 @@
 #endif
 
 #if wxUSE_STD_IOSTREAM
-    #include "wx/ioswrap.h"
+    #include <iostream>
 #else
     #include "wx/txtstrm.h"
 #endif
@@ -193,13 +193,7 @@ bool wxTextDocument::OnCreate(const wxString& path, long flags)
 
     // subscribe to changes in the text control to update the document state
     // when it's modified
-    GetTextCtrl()->Connect
-    (
-        wxEVT_TEXT,
-        wxCommandEventHandler(wxTextDocument::OnTextChange),
-        NULL,
-        this
-    );
+    GetTextCtrl()->Bind(wxEVT_TEXT, &wxTextDocument::OnTextChange, this);
 
     return true;
 }

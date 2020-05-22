@@ -68,6 +68,9 @@
 /* Define this if your version of GTK+ is >= 3.0 */
 #undef __WXGTK3__
 
+/* Define this if your version of GTK+ is >= 3.90.0 */
+#undef __WXGTK4__
+
 /* Define this if you want to use GPE features */
 #undef __WXGPE__
 
@@ -151,6 +154,10 @@
 
 #define wxDIALOG_UNIT_COMPATIBILITY   0
 
+#define wxUSE_UNSAFE_WXSTRING_CONV 0
+
+#define wxUSE_REPRODUCIBLE_BUILD 0
+
 
 
 #define wxUSE_ON_FATAL_EXCEPTION 0
@@ -174,8 +181,6 @@
 #ifndef wxUSE_UNICODE
     #define wxUSE_UNICODE 0
 #endif
-
-#define wxUSE_WCHAR_T 0
 
 
 #define wxUSE_EXCEPTIONS    0
@@ -214,9 +219,6 @@
 #define wxUSE_STD_STRING  wxUSE_STD_DEFAULT
 
 #define wxUSE_STD_STRING_CONV_IN_WXSTRING wxUSE_STL
-
-#define wxUSE_IOSTREAMH     0
-
 
 
 #define wxUSE_LONGLONG      0
@@ -280,6 +282,8 @@
 
 #define wxUSE_ZLIB          0
 
+#define wxUSE_LIBLZMA       0
+
 #define wxUSE_APPLE_IEEE          0
 
 #define wxUSE_JOYSTICK            0
@@ -332,22 +336,26 @@
 #define wxUSE_WEBVIEW_IE 0
 #endif
 
-#if defined(__WXGTK__) || defined(__WXOSX__)
+#define wxUSE_WEBVIEW_EDGE 0
+
+#if (defined(__WXGTK__) && !defined(__WXGTK3__)) || defined(__WXOSX__)
 #define wxUSE_WEBVIEW_WEBKIT 0
 #else
 #define wxUSE_WEBVIEW_WEBKIT 0
 #endif
 
+#if defined(__WXGTK3__)
+#define wxUSE_WEBVIEW_WEBKIT2 0
+#else
+#define wxUSE_WEBVIEW_WEBKIT2 0
+#endif
 
-#ifdef _MSC_VER
+
+#if defined(_MSC_VER) || \
+    (defined(__MINGW32__) && (__GNUC__ > 4 || __GNUC_MINOR__ >= 8))
 #define wxUSE_GRAPHICS_CONTEXT 0
 #else
-
-
-
-
-
-#   define wxUSE_GRAPHICS_CONTEXT 0
+#define wxUSE_GRAPHICS_CONTEXT 0
 #endif
 
 #define wxUSE_CAIRO 0
@@ -404,6 +412,8 @@
 #define wxUSE_TOGGLEBTN     0
 #define wxUSE_TREECTRL      0
 #define wxUSE_TREELISTCTRL  0
+
+#define wxUSE_NATIVE_DATAVIEWCTRL 0
 
 #define wxUSE_STATUSBAR    0
 
@@ -462,6 +472,8 @@
 #define wxUSE_NOTIFICATION_MESSAGE 0
 
 #define wxUSE_PREFERENCES_EDITOR 0
+
+#define wxUSE_PRIVATE_FONTS 0
 
 #define wxUSE_RICHTOOLTIP 0
 
@@ -544,7 +556,11 @@
 
 #define wxUSE_DRAG_AND_DROP 0
 
+#ifdef __WXMSW__
 #define wxUSE_ACCESSIBILITY 0
+#else
+#define wxUSE_ACCESSIBILITY 0
+#endif
 
 
 #define wxUSE_SNGLINST_CHECKER  0
@@ -614,7 +630,6 @@
 #define wxUSE_THEME_METAL   0
 #define wxUSE_THEME_MONO    0
 #define wxUSE_THEME_WIN32   0
-
 
 /* --- end common options --- */
 
@@ -697,6 +712,8 @@
 
 #define wxUSE_INICONF 0
 
+#define wxUSE_WINSOCK2 0
+
 
 #define wxUSE_DATEPICKCTRL_GENERIC 0
 
@@ -711,11 +728,6 @@
 
 #define wxUSE_CRASHREPORT 0
 /* --- end MSW options --- */
-
-/*
- * Define if your compiler supports the explicit keyword
- */
-#undef HAVE_EXPLICIT
 
 /*
  * Define if your compiler has C99 va_copy
@@ -883,11 +895,6 @@
 #define wxUSE_WEBKIT 0
 
 /*
- * Objective-C class name uniquifying
- */
-#define wxUSE_OBJC_UNIQUIFYING 0
-
-/*
  * The const keyword is being introduced more in wxWindows.
  * You can use this setting to maintain backward compatibility.
  * If 0: will use const wherever possible.
@@ -925,6 +932,9 @@
 
 /* struct tm doesn't always have the tm_gmtoff field, define this if it does */
 #undef WX_GMTOFF_IN_TM
+
+/* check if nl_langinfo() can be called with argument _NL_TIME_FIRST_WEEKDAY */
+#undef HAVE_NL_TIME_FIRST_WEEKDAY
 
 /* Define if you have poll(2) function */
 #undef HAVE_POLL
@@ -1258,6 +1268,9 @@
 
 /* Define if setpriority() is available. */
 #undef HAVE_SETPRIORITY
+
+/* Define if xlocale.h header file exists. */
+#undef HAVE_XLOCALE_H
 
 /* Define if locale_t is available */
 #undef HAVE_LOCALE_T

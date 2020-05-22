@@ -8,7 +8,7 @@
 #ifndef _WX_QT_STATBMP_H_
 #define _WX_QT_STATBMP_H_
 
-#include <QtWidgets/QLabel>
+class QLabel;
 
 class WXDLLIMPEXP_CORE wxStaticBitmap : public wxStaticBitmapBase
 {
@@ -30,12 +30,12 @@ public:
                  long style = 0,
                  const wxString& name = wxStaticBitmapNameStr);
 
-    virtual void SetIcon(const wxIcon& icon);
-    virtual void SetBitmap(const wxBitmap& bitmap);
-    virtual wxBitmap GetBitmap() const;
-    virtual wxIcon GetIcon() const;
+    virtual void SetIcon(const wxIcon& icon) wxOVERRIDE;
+    virtual void SetBitmap(const wxBitmap& bitmap) wxOVERRIDE;
+    virtual wxBitmap GetBitmap() const wxOVERRIDE;
+    virtual wxIcon GetIcon() const wxOVERRIDE;
 
-    virtual QLabel *GetHandle() const;
+    virtual QWidget *GetHandle() const wxOVERRIDE;
 protected:
 
 private:

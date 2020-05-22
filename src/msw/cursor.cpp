@@ -53,7 +53,7 @@ public:
 
     virtual ~wxCursorRefData() { Free(); }
 
-    virtual void Free();
+    virtual void Free() wxOVERRIDE;
 
 
     // return the size of the standard cursor: notice that the system only
@@ -63,9 +63,6 @@ public:
 
 private:
     bool m_destroyCursor;
-
-    // standard cursor size, computed on first use
-    static wxSize ms_sizeStd;
 };
 
 // ----------------------------------------------------------------------------
@@ -89,14 +86,14 @@ static wxCursor *gs_globalCursor = NULL;
 class wxCursorModule : public wxModule
 {
 public:
-    virtual bool OnInit()
+    virtual bool OnInit() wxOVERRIDE
     {
         gs_globalCursor = new wxCursor;
 
         return true;
     }
 
-    virtual void OnExit()
+    virtual void OnExit() wxOVERRIDE
     {
         wxDELETE(gs_globalCursor);
     }
@@ -110,22 +107,17 @@ public:
 // wxCursorRefData
 // ----------------------------------------------------------------------------
 
-wxSize wxCursorRefData::ms_sizeStd;
 
 wxCoord wxCursorRefData::GetStandardWidth()
 {
-    if ( !ms_sizeStd.x )
-        ms_sizeStd.x = wxSystemSettings::GetMetric(wxSYS_CURSOR_X);
-
-    return ms_sizeStd.x;
+    const wxWindow* win = wxTheApp ? wxTheApp->GetTopWindow() : NULL;
+    return wxSystemSettings::GetMetric(wxSYS_CURSOR_X, win);
 }
 
 wxCoord wxCursorRefData::GetStandardHeight()
 {
-    if ( !ms_sizeStd.y )
-        ms_sizeStd.y = wxSystemSettings::GetMetric(wxSYS_CURSOR_Y);
-
-    return ms_sizeStd.y;
+    const wxWindow* win = wxTheApp ? wxTheApp->GetTopWindow() : NULL;
+    return wxSystemSettings::GetMetric(wxSYS_CURSOR_Y, win);
 }
 
 wxCursorRefData::wxCursorRefData(HCURSOR hcursor, bool destroy)

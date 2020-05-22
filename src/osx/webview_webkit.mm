@@ -24,6 +24,7 @@
 
 #include "wx/osx/private.h"
 #include "wx/osx/core/cfref.h"
+#include "wx/private/jsscriptwrapper.h"
 
 #include "wx/hashmap.h"
 #include "wx/filesys.h"
@@ -32,14 +33,22 @@
 #include <UIKit/UIWebView.h>
 #else
 #include <WebKit/WebKit.h>
-#include <WebKit/HIWebView.h>
-#include <WebKit/CarbonUtils.h>
+#if MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_15
+  #include <WebKit/HIWebView.h>
+  #include <WebKit/CarbonUtils.h>
+#endif
 #endif
 #include <Foundation/NSURLError.h>
 
 // using native types to get compile errors and warnings
 
 #define DEBUG_WEBKIT_SIZING 0
+
+#if defined(MAC_OS_X_VERSION_10_11) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_11)
+    #define wxWEBKIT_PROTOCOL_SINCE_10_11(proto) < proto >
+#else
+    #define wxWEBKIT_PROTOCOL_SINCE_10_11(proto)
+#endif
 
 // ----------------------------------------------------------------------------
 // macros
@@ -50,7 +59,7 @@ wxIMPLEMENT_DYNAMIC_CLASS(wxWebViewWebKit, wxWebView);
 wxBEGIN_EVENT_TABLE(wxWebViewWebKit, wxControl)
 wxEND_EVENT_TABLE()
 
-@interface WebViewLoadDelegate : NSObject
+@interface WebViewLoadDelegate : NSObject wxWEBKIT_PROTOCOL_SINCE_10_11(WebFrameLoadDelegate)
 {
     wxWebViewWebKit* webKitWindow;
 }
@@ -59,7 +68,7 @@ wxEND_EVENT_TABLE()
 
 @end
 
-@interface WebViewPolicyDelegate : NSObject
+@interface WebViewPolicyDelegate : NSObject wxWEBKIT_PROTOCOL_SINCE_10_11(WebPolicyDelegate)
 {
     wxWebViewWebKit* webKitWindow;
 }
@@ -68,7 +77,7 @@ wxEND_EVENT_TABLE()
 
 @end
 
-@interface WebViewUIDelegate : NSObject
+@interface WebViewUIDelegate : NSObject wxWEBKIT_PROTOCOL_SINCE_10_11(WebUIDelegate)
 {
     wxWebViewWebKit* webKitWindow;
 }
@@ -130,17 +139,23 @@ bool wxWebViewWebKit::Create(wxWindow *parent,
             [[WebViewLoadDelegate alloc] initWithWxWindow: this];
 
     [m_webView setFrameLoadDelegate:loadDelegate];
+    
+    m_loadDelegate = loadDelegate;
 
     // this is used to veto page loads, etc.
     WebViewPolicyDelegate* policyDelegate =
             [[WebViewPolicyDelegate alloc] initWithWxWindow: this];
 
     [m_webView setPolicyDelegate:policyDelegate];
+    
+    m_policyDelegate = policyDelegate;
 
     WebViewUIDelegate* uiDelegate =
             [[WebViewUIDelegate alloc] initWithWxWindow: this];
 
     [m_webView setUIDelegate:uiDelegate];
+    
+    m_UIDelegate = uiDelegate;
 #endif
     //Register our own class for custom scheme handling
     [NSURLProtocol registerClass:[WebViewCustomProtocol class]];
@@ -153,21 +168,13 @@ wxWebViewWebKit::~wxWebViewWebKit()
 {
 #if wxOSX_USE_IPHONE
 #else
-    WebViewLoadDelegate* loadDelegate = [m_webView frameLoadDelegate];
-    WebViewPolicyDelegate* policyDelegate = [m_webView policyDelegate];
-    WebViewUIDelegate* uiDelegate = [m_webView UIDelegate];
     [m_webView setFrameLoadDelegate: nil];
     [m_webView setPolicyDelegate: nil];
     [m_webView setUIDelegate: nil];
 
-    if (loadDelegate)
-        [loadDelegate release];
-
-    if (policyDelegate)
-        [policyDelegate release];
-
-    if (uiDelegate)
-        [uiDelegate release];
+    [m_loadDelegate release];
+    [m_policyDelegate release];
+    [m_UIDelegate release];
 #endif
 }
 
@@ -402,13 +409,51 @@ wxString wxWebViewWebKit::GetSelectedText() const
     return wxCFStringRef::AsString([dr toString]);
 }
 
-void wxWebViewWebKit::RunScript(const wxString& javascript)
+bool wxWebViewWebKit::RunScript(const wxString& javascript, wxString* output)
 {
-    if ( !m_webView )
-        return;
+    wxCHECK_MSG( m_webView, false,
+        wxS("wxWebView must be created before calling RunScript()") );
 
-    [[m_webView windowScriptObject] evaluateWebScript:
-                    wxCFStringRef( javascript ).AsNSString()];
+    wxJSScriptWrapper wrapJS(javascript, &m_runScriptCount);
+
+    NSString* result = [m_webView stringByEvaluatingJavaScriptFromString:
+                            wxCFStringRef( wrapJS.GetWrappedCode() ).AsNSString()];
+
+    wxString err;
+    if ( result == nil )
+    {
+        // This is not very informative, but we just don't have any other
+        // information in this case.
+        err = _("failed to evaluate");
+    }
+    else if ( [result isEqualToString:@"true"] )
+    {
+        result = [m_webView stringByEvaluatingJavaScriptFromString:
+                    wxCFStringRef( wrapJS.GetOutputCode() ).AsNSString()];
+
+        [m_webView stringByEvaluatingJavaScriptFromString:
+            wxCFStringRef( wrapJS.GetCleanUpCode() ).AsNSString()];
+
+        if ( output != NULL )
+        {
+            if ( result )
+                *output = wxCFStringRef::AsString(result);
+            else
+                err = _("failed to retrieve execution result");
+        }
+    }
+    else // result available but not the expected "true"
+    {
+        err = wxCFStringRef::AsString(result);
+    }
+
+    if ( !err.empty() )
+    {
+        wxLogWarning(_("Error running JavaScript: %s"), err);
+        return false;
+    }
+
+    return true;
 }
 
 void wxWebViewWebKit::OnSize(wxSizeEvent &event)
@@ -684,8 +729,10 @@ void wxWebViewWebKit::RegisterHandler(wxSharedPtr<wxWebViewHandler> handler)
 
 - (id)initWithWxWindow: (wxWebViewWebKit*)inWindow
 {
-    [super init];
-    webKitWindow = inWindow;    // non retained
+    if (self = [super init])
+    {
+        webKitWindow = inWindow;    // non retained
+    }
     return self;
 }
 
@@ -872,8 +919,10 @@ wxString nsErrorToWxHtmlError(NSError* error, wxWebViewNavigationError* out)
 
 - (id)initWithWxWindow: (wxWebViewWebKit*)inWindow
 {
-    [super init];
-    webKitWindow = inWindow;    // non retained
+    if (self = [super init])
+    {
+        webKitWindow = inWindow;    // non retained
+    }
     return self;
 }
 
@@ -930,12 +979,17 @@ wxString nsErrorToWxHtmlError(NSError* error, wxWebViewNavigationError* out)
                         newFrameName:(NSString *)frameName
                     decisionListener:(id < WebPolicyDecisionListener >)listener
 {
-    wxUnusedVar(actionInformation);
-
     NSString *url = [[request URL] absoluteString];
+
+    wxWebViewNavigationActionFlags flags = wxWEBVIEW_NAV_ACTION_USER;
+
+    int action = [[actionInformation objectForKey:WebActionNavigationTypeKey] intValue];
+    if (action == WebNavigationTypeOther)
+        flags = wxWEBVIEW_NAV_ACTION_OTHER;
+
     wxWebViewEvent event(wxEVT_WEBVIEW_NEWWINDOW,
                          webKitWindow->GetId(),
-                         wxCFStringRef::AsString( url ), "");
+                         wxCFStringRef::AsString( url ), "", flags);
 
     if (webKitWindow && webKitWindow->GetEventHandler())
         webKitWindow->GetEventHandler()->ProcessEvent(event);
@@ -979,8 +1033,16 @@ wxString nsErrorToWxHtmlError(NSError* error, wxWebViewNavigationError* out)
 
     wxString wxpath = wxCFStringRef::AsString(path);
     wxString scheme = wxCFStringRef::AsString([[request URL] scheme]);
+    
+    // since canInitRequest has already checked whether this scheme is supported
+    // the hash map contains this entry, but to satisfy static code analysis
+    // suspecting nullptr dereference ...
+#ifndef __clang_analyzer__
     wxFSFile* file = g_stringHandlerMap[scheme]->GetFile(wxpath);
-
+#else
+    wxFSFile* file = NULL;
+#endif
+    
     if (!file)
     {
         NSError *error = [[NSError alloc] initWithDomain:NSURLErrorDomain
@@ -988,6 +1050,8 @@ wxString nsErrorToWxHtmlError(NSError* error, wxWebViewNavigationError* out)
                             userInfo:nil];
 
         [client URLProtocol:self didFailWithError:error];
+        
+        [error release];
 
         return;
     }
@@ -1015,6 +1079,8 @@ wxString nsErrorToWxHtmlError(NSError* error, wxWebViewNavigationError* out)
     //Notify that we have finished
     [client URLProtocolDidFinishLoading:self];
 
+    [data release];
+    
     [response release];
 }
 
@@ -1030,8 +1096,10 @@ wxString nsErrorToWxHtmlError(NSError* error, wxWebViewNavigationError* out)
 
 - (id)initWithWxWindow: (wxWebViewWebKit*)inWindow
 {
-    [super init];
-    webKitWindow = inWindow;    // non retained
+    if (self = [super init])
+    {
+        webKitWindow = inWindow;    // non retained
+    }
     return self;
 }
 

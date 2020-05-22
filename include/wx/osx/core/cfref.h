@@ -21,6 +21,14 @@
 // Include AvailabilityMacros for DEPRECATED_ATTRIBUTE
 #include <AvailabilityMacros.h>
 
+#if __has_feature(objc_arc)
+#define WX_OSX_BRIDGE_RETAINED __bridge_retained
+#define WX_OSX_BRIDGE __bridge
+#else
+#define WX_OSX_BRIDGE_RETAINED
+#define WX_OSX_BRIDGE 
+#endif
+
 // #include <CoreFoundation/CFBase.h>
 /* Don't include CFBase.h such that this header can be included from public
  * headers with minimal namespace pollution.
@@ -58,7 +66,7 @@ inline Type* wxCFRetain(Type *r)
     // Casting r to CFTypeRef ensures we are calling the real C version defined in CFBase.h
     // and not any possibly templated/overloaded CFRetain.
     if ( r != NULL )
-        r = (Type*)::CFRetain((CFTypeRef)r);
+        r = const_cast<Type*>(static_cast<const Type*>(::CFRetain(static_cast<CFTypeRef>(r))));
     return r;
 }
 
@@ -167,16 +175,30 @@ public:
 
     /*! @method     wxCFRef
         @abstract   Assumes ownership of p and creates a reference to it.
+     @param p        The raw core foundation reference to assume ownership of.  May be NULL.
+     @discussion Like shared_ptr, it is assumed that the caller has a strong reference to p and intends
+     to transfer ownership of that reference to this ref holder.  If the object comes from
+     a Create or Copy method then this is the correct behaviour.  If the object comes from
+     a Get method then you must CFRetain it yourself before passing it to this constructor.
+     A handy way to do this is to use the non-member wxCFRefFromGet factory function.
+     */
+    wxCFRef(refType p) : m_ptr(p)
+    {
+
+    }
+    /*! @method     wxCFRef
+        @abstract   Assumes ownership of p and creates a reference to it.
         @templatefield otherType    Any type.
         @param p        The raw pointer to assume ownership of.  May be NULL.
         @discussion Like shared_ptr, it is assumed that the caller has a strong reference to p and intends
                     to transfer ownership of that reference to this ref holder.  If the object comes from
                     a Create or Copy method then this is the correct behaviour.  If the object comes from
                     a Get method then you must CFRetain it yourself before passing it to this constructor.
-                    A handy way to do this is to use the non-member wxCFRefFromGet factory funcion.
+                    A handy way to do this is to use the non-member wxCFRefFromGet factory function.
                     This method is templated and takes an otherType *p.  This prevents implicit conversion
                     using an operator refType() in a different ref-holding class type.
     */
+
     template <class otherType>
     explicit wxCFRef(otherType *p)
     :   m_ptr(p) // Implicit conversion from otherType* to refType should occur.

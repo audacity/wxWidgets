@@ -86,6 +86,9 @@ void wxXmlResource::InitAllHandlers()
 #if wxUSE_COMMANDLINKBUTTON
     AddHandler(new wxCommandLinkButtonXmlHandler);
 #endif
+#if wxUSE_DATAVIEWCTRL
+    AddHandler(new wxDataViewXmlHandler);
+#endif
 #if wxUSE_DATEPICKCTRL
     AddHandler(new wxDateCtrlXmlHandler);
 #endif
@@ -119,6 +122,9 @@ void wxXmlResource::InitAllHandlers()
 #endif
 #if wxUSE_HYPERLINKCTRL
     AddHandler( new wxHyperlinkCtrlXmlHandler);
+#endif
+#if wxUSE_INFOBAR
+    AddHandler(new wxInfoBarXmlHandler);
 #endif
 #if wxUSE_LISTBOOK
     AddHandler(new wxListbookXmlHandler);
@@ -165,6 +171,7 @@ void wxXmlResource::InitAllHandlers()
 #endif
 #if wxUSE_SPINCTRL
     AddHandler(new wxSpinCtrlXmlHandler);
+    AddHandler(new wxSpinCtrlDoubleXmlHandler);
 #endif
 #if wxUSE_SPLITTER
     AddHandler(new wxSplitterWindowXmlHandler);

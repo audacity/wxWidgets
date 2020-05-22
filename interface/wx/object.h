@@ -609,6 +609,21 @@ public:
     void reset(T *ptr);
 
     /**
+        Release the owned pointer, making caller responsible for decrementing
+        its reference count.
+
+        This method should be used only for interoperating with the existing
+        code working with raw pointers, typically when returning a raw pointer
+        from a function.
+
+        After calling this function, this object becomes invalid, i.e. it
+        doesn't hold any valid pointer value any more.
+
+        @since 3.1.4
+    */
+    T* release();
+
+    /**
         Conversion to a boolean expression (in a variant which is not
         convertable to anything but a boolean expression).
 
@@ -718,7 +733,7 @@ public:
 /**
     Used in a C++ implementation file to complete the declaration of a class
     that has run-time type information.
-    
+
     @header{wx/object.h}
 
     Example:
@@ -726,7 +741,7 @@ public:
     @code
     wxIMPLEMENT_ABSTRACT_CLASS(wxCommand, wxObject);
 
-    wxCommand::wxCommand(void)
+    wxCommand::wxCommand()
     {
         ...
     }
@@ -736,7 +751,7 @@ public:
 
 /**
     Used in a C++ implementation file to complete the declaration of a class
-    that has run-time type information and two base classes. 
+    that has run-time type information and two base classes.
 
     @header{wx/object.h}
 */
@@ -754,7 +769,7 @@ public:
     @code
     wxIMPLEMENT_DYNAMIC_CLASS(wxFrame, wxWindow);
 
-    wxFrame::wxFrame(void)
+    wxFrame::wxFrame()
     {
         ...
     }
@@ -772,55 +787,24 @@ public:
 #define wxIMPLEMENT_DYNAMIC_CLASS2( className, baseClassName1, baseClassName2 )
 
 /**
-    Used in a C++ implementation file to complete the declaration of a class
-    that has run-time type information, and whose instances can be created
-    dynamically. The same as wxIMPLEMENT_DYNAMIC_CLASS().
+    Synonym for wxIMPLEMENT_ABSTRACT_CLASS().
+
+    Please prefer to use the more clear, if longer,
+    ::wxIMPLEMENT_ABSTRACT_CLASS in the new code.
 
     @header{wx/object.h}
 */
 #define wxIMPLEMENT_CLASS( className, baseClassName )
 
 /**
-    Used in a C++ implementation file to complete the declaration of a class
-    that has run-time type information and two base classes, and whose instances 
-    can be created dynamically. The same as wxIMPLEMENT_DYNAMIC_CLASS2().
+    Synonym for wxIMPLEMENT_ABSTRACT_CLASS2().
+
+    Please prefer to use the more clear, if longer,
+    ::wxIMPLEMENT_ABSTRACT_CLASS2 in the new code.
 
     @header{wx/object.h}
 */
 #define wxIMPLEMENT_CLASS2( className, baseClassName1, baseClassName2 )
-
-/**
-    Same as @c const_cast<T>(x) if the compiler supports const cast or @c (T)x for
-    old compilers. Unlike wxConstCast(), the cast it to the type @c T and not to
-    <tt>T *</tt> and also the order of arguments is the same as for the standard cast.
-
-    @header{wx/defs.h}
-
-    @see wx_reinterpret_cast(), wx_static_cast()
-*/
-#define wx_const_cast(T, x)
-
-/**
-    Same as @c reinterpret_cast<T>(x) if the compiler supports reinterpret cast or
-    @c (T)x for old compilers.
-
-    @header{wx/defs.h}
-
-    @see wx_const_cast(), wx_static_cast()
-*/
-#define wx_reinterpret_cast(T, x)
-
-/**
-    Same as @c static_cast<T>(x) if the compiler supports static cast or @c (T)x for
-    old compilers. Unlike wxStaticCast(), there are no checks being done and
-    the meaning of the macro arguments is exactly the same as for the standard
-    static cast, i.e. @a T is the full type name and star is not appended to it.
-
-    @header{wx/defs.h}
-
-    @see wx_const_cast(), wx_reinterpret_cast(), wx_truncate_cast()
-*/
-#define wx_static_cast(T, x)
 
 /**
     This case doesn’t correspond to any standard cast but exists solely to make
@@ -837,7 +821,7 @@ public:
 
     @header{wx/defs.h}
 
-    @see wx_const_cast(), wxDynamicCast(), wxStaticCast()
+    @see wxDynamicCast(), wxStaticCast()
 */
 #define wxConstCast( ptr, classname )
 
@@ -889,7 +873,7 @@ public:
 
     @header{wx/object.h}
 
-    @see wx_static_cast(), wxDynamicCast(), wxConstCast()
+    @see wxDynamicCast(), wxConstCast()
 */
 #define wxStaticCast( ptr, classname )
 

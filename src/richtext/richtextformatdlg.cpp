@@ -120,13 +120,9 @@ bool wxRichTextFormattingDialog::Create(long flags, wxWindow* parent, const wxSt
     SetWindowVariant(wxWINDOW_VARIANT_SMALL);
 #endif
 
-    int resizeBorder = wxRESIZE_BORDER;
-
     GetFormattingDialogFactory()->SetSheetStyle(this);
 
-    wxPropertySheetDialog::Create(parent, id, title, pos, sz,
-        style | (int)wxPlatform::IfNot(wxOS_WINDOWS_CE, resizeBorder)
-    );
+    wxPropertySheetDialog::Create(parent, id, title, pos, sz, style | wxRESIZE_BORDER);
 
     GetFormattingDialogFactory()->CreateButtons(this);
     GetFormattingDialogFactory()->CreatePages(flags, this);
@@ -516,8 +512,7 @@ void wxRichTextFontPreviewCtrl::OnPaint(wxPaintEvent& WXUNUSED(event))
 
     if ((GetTextEffects() & wxTEXT_ATTR_EFFECT_SUPERSCRIPT) || (GetTextEffects() & wxTEXT_ATTR_EFFECT_SUBSCRIPT))
     {
-        double fontSize = static_cast<double>(font.GetPointSize()) / wxSCRIPT_MUL_FACTOR;
-        font.SetPointSize( static_cast<int>(fontSize) );
+        font.SetFractionalPointSize(font.GetFractionalPointSize() / wxSCRIPT_MUL_FACTOR);
     }
 
     if ( font.IsOk() )
@@ -620,7 +615,7 @@ void wxRichTextFormattingDialog::SetDimensionValue(wxTextAttrDimension& dim, wxT
         else if (dim.GetUnits() == wxTEXT_ATTR_UNITS_TENTHS_MM)
         {
             unitsIdx = 1; // By default, the 2nd in the list.
-            float value = dim.GetValue() / 100.0f;
+            double value = dim.GetValue() / 100.0;
             valueCtrl->SetValue(wxString::Format(wxT("%.2f"), value));
         }
         else if (dim.GetUnits() == wxTEXT_ATTR_UNITS_PERCENTAGE)
@@ -631,7 +626,7 @@ void wxRichTextFormattingDialog::SetDimensionValue(wxTextAttrDimension& dim, wxT
         else if (dim.GetUnits() == wxTEXT_ATTR_UNITS_HUNDREDTHS_POINT)
         {
             unitsIdx = 3; // By default, the 4th in the list.
-            float value = dim.GetValue() / 100.0f;
+            double value = dim.GetValue() / 100.0;
             valueCtrl->SetValue(wxString::Format(wxT("%.2f"), value));
         }
         else if (dim.GetUnits() == wxTEXT_ATTR_UNITS_POINTS)
@@ -879,7 +874,7 @@ wxString wxRichTextFontListBox::CreateHTML(const wxString& facename) const
 {
     wxString str = wxT("<font");
 
-    str << wxT(" size=\"+2\"");;
+    str << wxT(" size=\"+2\"");
 
     if (!facename.IsEmpty() && facename != _("(none)"))
         str << wxT(" face=\"") << facename << wxT("\"");

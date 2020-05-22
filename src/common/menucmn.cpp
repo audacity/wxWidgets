@@ -59,7 +59,7 @@ wxEND_FLAGS( wxMenuStyle )
 wxIMPLEMENT_DYNAMIC_CLASS_XTI(wxMenu, wxEvtHandler, "wx/menu.h");
 wxCOLLECTION_TYPE_INFO( wxMenuItem *, wxMenuItemList ) ;
 
-#if wxUSE_EXTENDED_RTTI    
+#if wxUSE_EXTENDED_RTTI
 template<> void wxCollectionToVariantArray( wxMenuItemList const &theList,
                                            wxAnyList &value)
 {
@@ -91,7 +91,7 @@ wxBEGIN_FLAGS( wxMenuBarStyle )
 wxFLAGS_MEMBER(wxMB_DOCKABLE)
 wxEND_FLAGS( wxMenuBarStyle )
 
-#if wxUSE_EXTENDED_RTTI    
+#if wxUSE_EXTENDED_RTTI
 // the negative id would lead the window (its superclass !) to
 // vetoe streaming out otherwise
 bool wxMenuBarStreamingCallback( const wxObject *WXUNUSED(object), wxObjectWriter *,
@@ -105,7 +105,7 @@ wxIMPLEMENT_DYNAMIC_CLASS_XTI_CALLBACK(wxMenuBar, wxWindow, "wx/menu.h", \
                                        wxMenuBarStreamingCallback)
 
 
-#if wxUSE_EXTENDED_RTTI    
+#if wxUSE_EXTENDED_RTTI
 WX_DEFINE_LIST( wxMenuInfoHelperList )
 
 wxIMPLEMENT_DYNAMIC_CLASS_XTI(wxMenuInfoHelper, wxObject, "wx/menu.h");
@@ -124,7 +124,7 @@ wxCONSTRUCTOR_2( wxMenuInfoHelper, wxMenu*, Menu, wxString, Title )
 
 wxCOLLECTION_TYPE_INFO( wxMenuInfoHelper *, wxMenuInfoHelperList ) ;
 
-template<> void wxCollectionToVariantArray( wxMenuInfoHelperList const &theList, 
+template<> void wxCollectionToVariantArray( wxMenuInfoHelperList const &theList,
                                            wxAnyList &value)
 {
     wxListCollectionToAnyList<wxMenuInfoHelperList::compatibility_iterator>( theList, value ) ;
@@ -141,7 +141,7 @@ wxEMPTY_HANDLERS_TABLE(wxMenuBar)
 
 wxCONSTRUCTOR_DUMMY( wxMenuBar )
 
-#if wxUSE_EXTENDED_RTTI    
+#if wxUSE_EXTENDED_RTTI
 
 const wxMenuInfoHelperList& wxMenuBarBase::GetMenuInfos() const
 {
@@ -326,7 +326,7 @@ void wxMenuItemBase::SetHelp(const wxString& str)
 
 wxString wxMenuItemBase::GetLabelText(const wxString& text)
 {
-    return wxStripMenuCodes(text);
+    return wxStripMenuCodes(text, wxStrip_Menu);
 }
 
 #if WXWIN_COMPATIBILITY_2_8
@@ -537,7 +537,7 @@ wxMenuItem *wxMenuBase::FindItem(int itemId, wxMenu **itemMenu) const
         if ( item->GetId() == itemId )
         {
             if ( itemMenu )
-                *itemMenu = (wxMenu *)this;
+                *itemMenu = const_cast<wxMenu*>(static_cast<const wxMenu*>(this));
         }
         else if ( item->IsSubMenu() )
         {
@@ -648,11 +648,12 @@ bool wxMenuBase::DoProcessEvent(wxMenuBase* menu, wxEvent& event, wxWindow* win)
 {
     event.SetEventObject(menu);
 
-    if ( menu )
-    {
-        wxMenuBar* const mb = menu->GetMenuBar();
+    wxMenuBar* const mb = menu ? menu->GetMenuBar() : NULL;
 
-        // Try the menu's event handler first
+    // Process event in the menu itself and all its parent menus, if it's a
+    // submenu, first.
+    for ( ; menu; menu = menu->GetParent() )
+    {
         wxEvtHandler *handler = menu->GetEventHandler();
         if ( handler )
         {
@@ -666,19 +667,19 @@ bool wxMenuBase::DoProcessEvent(wxMenuBase* menu, wxEvent& event, wxWindow* win)
             if ( handler->SafelyProcessEvent(event) )
                 return true;
         }
+    }
 
-        // If this menu is part of the menu bar, try the event there. this
-        if ( mb )
-        {
-            if ( mb->HandleWindowEvent(event) )
-                return true;
+    // If this menu is part of the menu bar, try the event there.
+    if ( mb )
+    {
+        if ( mb->HandleWindowEvent(event) )
+            return true;
 
-            // If this already propagated it upwards to the window containing
-            // the menu bar, we don't have to handle it in this window again
-            // below.
-            if ( event.ShouldPropagate() )
-                return false;
-        }
+        // If this already propagated it upwards to the window containing
+        // the menu bar, we don't have to handle it in this window again
+        // below.
+        if ( event.ShouldPropagate() )
+            return false;
     }
 
     // Try the window the menu was popped up from.
@@ -982,7 +983,7 @@ wxMenuItem *wxMenuBarBase::FindItem(int itemid, wxMenu **menu) const
     wxMenuItem *item = NULL;
     size_t count = GetMenuCount(), i;
     wxMenuList::const_iterator it;
-    for ( i = 0, it = m_menus.begin(); !item && (i < count); i++, it++ )
+    for ( i = 0, it = m_menus.begin(); !item && (i < count); i++, ++it )
     {
         item = (*it)->FindItem(itemid, menu);
     }
@@ -1086,10 +1087,10 @@ wxString wxMenuBarBase::GetHelpString(int itemid) const
 
 void wxMenuBarBase::UpdateMenus()
 {
-    wxMenu* menu;
     int nCount = GetMenuCount();
     for (int n = 0; n < nCount; n++)
     {
+        wxMenu* menu;
         menu = GetMenu( n );
         if (menu != NULL)
             menu->UpdateUI();

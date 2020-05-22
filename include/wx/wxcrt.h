@@ -110,7 +110,7 @@ WXDLLIMPEXP_BASE size_t wxWC2MB(char *buf, const wchar_t *psz, size_t n);
 // (notice that these intentionally return "char *" and not "void *" unlike the
 // standard memxxx() for symmetry with the wide char versions):
 inline char* wxTmemchr(const char* s, char c, size_t len)
-    { return (char*)memchr(s, c, len); }
+    { return const_cast<char*>(static_cast<const char*>(memchr(s, c, len))); }
 inline int wxTmemcmp(const char* sz1, const char* sz2, size_t len)
     { return memcmp(sz1, sz2, len); }
 inline char* wxTmemcpy(char* szOut, const char* szIn, size_t len)
@@ -257,7 +257,7 @@ inline size_t wxStrlcpy(char *dest, const char *src, size_t n)
     {
         if ( n-- > len )
             n = len;
-        wxCRT_StrncpyA(dest, src, n);
+        memcpy(dest, src, n);
         dest[n] = '\0';
     }
 
@@ -270,7 +270,7 @@ inline size_t wxStrlcpy(wchar_t *dest, const wchar_t *src, size_t n)
     {
         if ( n-- > len )
             n = len;
-        wxCRT_StrncpyW(dest, src, n);
+        memcpy(dest, src, n * sizeof(wchar_t));
         dest[n] = L'\0';
     }
 
@@ -727,7 +727,7 @@ inline char * wxStrchr(char *s, T c)
     { return const_cast<char*>(wxStrchr(const_cast<const char*>(s), c)); }
 template <typename T>
 inline wchar_t * wxStrchr(wchar_t *s, T c)
-    { return (wchar_t *)wxStrchr((const wchar_t *)s, c); }
+    { return const_cast<wchar_t*>(wxStrchr(const_cast<const wchar_t*>(s), c)); }
 template <typename T>
 inline char * wxStrrchr(char *s, T c)
     { return const_cast<char*>(wxStrrchr(const_cast<const char*>(s), c)); }
@@ -848,26 +848,43 @@ template<> struct wxStrtoxCharType<int>
 template<typename T>
 inline double wxStrtod(const wxString& nptr, T endptr)
 {
-    if ( endptr == 0 )
+    if (!endptr)
     {
         // when we don't care about endptr, use the string representation that
         // doesn't require any conversion (it doesn't matter for this function
         // even if its UTF-8):
-        return wxStrtod(nptr.wx_str(), (wxStringCharType**)NULL);
+        wxStringCharType** p = NULL;
+        return wxStrtod(nptr.wx_str(), p);
     }
-    else
-    {
-        // note that it is important to use c_str() here and not mb_str() or
-        // wc_str(), because we store the pointer into (possibly converted)
-        // buffer in endptr and so it must be valid even when wxStrtod() returns
-        typedef typename wxStrtoxCharType<T>::Type CharType;
-        return wxStrtod((CharType)nptr.c_str(),
-                        wxStrtoxCharType<T>::AsPointer(endptr));
-    }
+    // note that it is important to use c_str() here and not mb_str() or
+    // wc_str(), because we store the pointer into (possibly converted)
+    // buffer in endptr and so it must be valid even when wxStrtod() returns
+    typedef typename wxStrtoxCharType<T>::Type CharType;
+    return wxStrtod((CharType)nptr.c_str(),
+                    wxStrtoxCharType<T>::AsPointer(endptr));
 }
 template<typename T>
 inline double wxStrtod(const wxCStrData& nptr, T endptr)
     { return wxStrtod(nptr.AsString(), endptr); }
+
+#ifdef wxHAS_NULLPTR_T
+
+inline double wxStrtod(const wxString& nptr, std::nullptr_t)
+    { return wxStrtod(nptr.wx_str(), static_cast<wxStringCharType**>(NULL)); }
+inline double wxStrtod(const wxCStrData& nptr, std::nullptr_t)
+    { return wxStrtod(nptr.AsString(), static_cast<wxStringCharType**>(NULL)); }
+
+#define WX_STRTOX_DEFINE_NULLPTR_OVERLOADS(rettype, name)                     \
+    inline rettype name(const wxString& nptr, std::nullptr_t, int base)       \
+        { return name(nptr.wx_str(), static_cast<wxStringCharType**>(NULL),   \
+                      base); }                                                \
+    inline rettype name(const wxCStrData& nptr, std::nullptr_t, int base)     \
+        { return name(nptr.AsString(), static_cast<wxStringCharType**>(NULL), \
+                      base); }
+
+#else // !wxHAS_NULLPTR_T
+#define WX_STRTOX_DEFINE_NULLPTR_OVERLOADS(rettype, name)
+#endif // wxHAS_NULLPTR_T/!wxHAS_NULLPTR_T
 
 
 #define WX_STRTOX_FUNC(rettype, name, implA, implW)                           \
@@ -882,19 +899,20 @@ inline double wxStrtod(const wxCStrData& nptr, T endptr)
     template<typename T>                                                      \
     inline rettype name(const wxString& nptr, T endptr, int base)             \
     {                                                                         \
-        if ( endptr == 0 )                                                    \
-            return name(nptr.wx_str(), (wxStringCharType**)NULL, base);       \
-        else                                                                  \
+        if (!endptr)                                                          \
         {                                                                     \
-            typedef typename wxStrtoxCharType<T>::Type CharType;              \
-            return name((CharType)nptr.c_str(),                               \
-                        wxStrtoxCharType<T>::AsPointer(endptr),               \
-                        base);                                                \
+            wxStringCharType** p = NULL;                                      \
+            return name(nptr.wx_str(), p, base);                              \
         }                                                                     \
+        typedef typename wxStrtoxCharType<T>::Type CharType;                  \
+        return name((CharType)nptr.c_str(),                                   \
+                    wxStrtoxCharType<T>::AsPointer(endptr),                   \
+                    base);                                                    \
     }                                                                         \
     template<typename T>                                                      \
     inline rettype name(const wxCStrData& nptr, T endptr, int base)           \
-        { return name(nptr.AsString(), endptr, base); }
+        { return name(nptr.AsString(), endptr, base); }                       \
+    WX_STRTOX_DEFINE_NULLPTR_OVERLOADS(rettype, name)
 
 WX_STRTOX_FUNC(long, wxStrtol, wxCRT_StrtolA, wxCRT_StrtolW)
 WX_STRTOX_FUNC(unsigned long, wxStrtoul, wxCRT_StrtoulA, wxCRT_StrtoulW)
@@ -905,13 +923,16 @@ WX_STRTOX_FUNC(wxULongLong_t, wxStrtoull, wxCRT_StrtoullA, wxCRT_StrtoullW)
 
 #undef WX_STRTOX_FUNC
 
-
+// ios doesn't export system starting from iOS 11 anymore and usage was critical before
+#if defined(__WXOSX__) && wxOSX_USE_IPHONE
+#else
 // mingw32 doesn't provide _tsystem() even though it provides other stdlib.h
 // functions in their wide versions
 #ifdef wxCRT_SystemW
 inline int wxSystem(const wxString& str) { return wxCRT_SystemW(str.wc_str()); }
 #else
 inline int wxSystem(const wxString& str) { return wxCRT_SystemA(str.mb_str()); }
+#endif
 #endif
 
 inline char* wxGetenv(const char *name) { return wxCRT_GetenvA(name); }

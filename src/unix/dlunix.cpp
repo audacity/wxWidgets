@@ -4,7 +4,7 @@
 // Author:      Vadim Zeitlin
 // Modified by:
 // Created:     2005-01-16 (extracted from common/dynlib.cpp)
-// Copyright:   (c) 2000-2005 Vadim Zeitlin <vadim@wxwindows.org>
+// Copyright:   (c) 2000-2005 Vadim Zeitlin <vadim@wxwidgets.org>
 // Licence:     wxWindows licence
 /////////////////////////////////////////////////////////////////////////////
 
@@ -36,10 +36,6 @@
     #include <dlfcn.h>
 #endif
 
-#ifdef __DARWIN__
-    #include <AvailabilityMacros.h>
-#endif
-
 // if some flags are not supported, just ignore them
 #ifndef RTLD_LAZY
     #define RTLD_LAZY 0
@@ -54,7 +50,7 @@
 #endif
 
 
-#if defined(HAVE_DLOPEN) || defined(__DARWIN__)
+#if defined(HAVE_DLOPEN)
     #define USE_POSIX_DL_FUNCS
 #elif !defined(HAVE_SHL_LOAD)
     #error "Don't know how to load dynamic libraries on this platform!"
@@ -112,7 +108,7 @@ wxDllType wxDynamicLibrary::RawLoad(const wxString& libname, int flags)
 /* static */
 void wxDynamicLibrary::Unload(wxDllType handle)
 {
-#ifdef wxHAVE_DYNLIB_ERROR
+#ifdef HAVE_DLERROR
     int rc =
 #endif
 
@@ -122,7 +118,7 @@ void wxDynamicLibrary::Unload(wxDllType handle)
     shl_unload(handle);
 #endif // USE_POSIX_DL_FUNCS/!USE_POSIX_DL_FUNCS
 
-#if defined(USE_POSIX_DL_FUNCS) && defined(wxHAVE_DYNLIB_ERROR)
+#if defined(USE_POSIX_DL_FUNCS) && defined(HAVE_DLERROR)
     if ( rc != 0 )
         Error();
 #endif
@@ -149,7 +145,7 @@ void *wxDynamicLibrary::RawGetSymbol(wxDllType handle, const wxString& name)
 // error handling
 // ----------------------------------------------------------------------------
 
-#ifdef wxHAVE_DYNLIB_ERROR
+#ifdef HAVE_DLERROR
 
 /* static */
 void wxDynamicLibrary::Error()
@@ -162,7 +158,7 @@ void wxDynamicLibrary::Error()
     wxLogError(wxT("%s"), err);
 }
 
-#endif // wxHAVE_DYNLIB_ERROR
+#endif // HAVE_DLERROR
 
 // ----------------------------------------------------------------------------
 // listing loaded modules
@@ -230,7 +226,7 @@ wxDynamicLibraryDetailsArray wxDynamicLibrary::ListLoaded()
             // format is: "start-end perm offset maj:min inode path", see proc(5)
             void *start,
                  *end;
-            switch ( sscanf(buf, "%p-%p %*4s %*p %*02x:%*02x %*d %1024s\n",
+            switch ( sscanf(buf, "%p-%p %*4s %*p %*02x:%*02x %*d %1023s\n",
                             &start, &end, path) )
             {
                 case 2:
@@ -285,7 +281,7 @@ wxDynamicLibraryDetailsArray wxDynamicLibrary::ListLoaded()
 void* wxDynamicLibrary::GetModuleFromAddress(const void* addr, wxString* path)
 {
 #ifdef HAVE_DLADDR
-    Dl_info di = { 0 };
+    Dl_info di = { }; // 0 initialize whatever fields the struct has
 
     // At least under Solaris dladdr() takes non-const void*.
     if ( dladdr(const_cast<void*>(addr), &di) == 0 )

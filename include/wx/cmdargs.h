@@ -3,7 +3,7 @@
 // Purpose:     declaration of wxCmdLineArgsArray helper class
 // Author:      Vadim Zeitlin
 // Created:     2007-11-12
-// Copyright:   (c) 2007 Vadim Zeitlin <vadim@wxwindows.org>
+// Copyright:   (c) 2007 Vadim Zeitlin <vadim@wxwidgets.org>
 // Licence:     wxWindows licence
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -31,19 +31,17 @@ public:
     wxCmdLineArgsArray() { m_argsA = NULL; m_argsW = NULL; }
 
     template <typename T>
-    wxCmdLineArgsArray& operator=(T **argv)
+    void Init(int argc, T **argv)
     {
         FreeArgs();
 
         m_args.clear();
+        m_args.reserve(argc);
 
-        if ( argv )
+        for ( int i = 0; i < argc; i++ )
         {
-            while ( *argv )
-                m_args.push_back(*argv++);
+            m_args.push_back(argv[i]);
         }
-
-        return *this;
     }
 
     operator char**() const

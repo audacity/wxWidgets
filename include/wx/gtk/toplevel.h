@@ -9,6 +9,8 @@
 #ifndef _WX_GTK_TOPLEVEL_H_
 #define _WX_GTK_TOPLEVEL_H_
 
+class WXDLLIMPEXP_FWD_CORE wxGUIEventLoop;
+
 //-----------------------------------------------------------------------------
 // wxTopLevelWindowGTK
 //-----------------------------------------------------------------------------
@@ -80,7 +82,7 @@ public:
     // viewable from within modal dialogs
     virtual void AddGrab();
     virtual void RemoveGrab();
-    virtual bool IsGrabbed() const { return m_grabbed; }
+    virtual bool IsGrabbed() const;
 
 
     virtual void Refresh( bool eraseBackground = true,
@@ -110,6 +112,14 @@ public:
     // size of WM decorations
     struct DecorSize
     {
+        DecorSize()
+        {
+            left =
+            right =
+            top =
+            bottom = 0;
+        }
+
         int left, right, top, bottom;
     };
     DecorSize m_decorSize;
@@ -154,11 +164,14 @@ private:
     // size hint increments
     int m_incWidth, m_incHeight;
 
+    // position before it last changed
+    wxPoint m_lastPos;
+
     // is the frame currently iconized?
     bool m_isIconized;
 
     // is the frame currently grabbed explicitly by the application?
-    bool m_grabbed;
+    wxGUIEventLoop* m_grabbedEventLoop;
 
     bool m_updateDecorSize;
     bool m_deferShowAllowed;

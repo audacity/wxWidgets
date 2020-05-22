@@ -37,7 +37,7 @@
 #include "wx/spinctrl.h"
 #include "wx/tokenzr.h"
 #include "wx/renderer.h"
-#include "wx/headerctrl.h"
+#include "wx/datectrl.h"
 
 #include "wx/generic/gridsel.h"
 #include "wx/generic/grideditors.h"
@@ -183,7 +183,7 @@ void wxGridCellEditorEvtHandler::OnChar(wxKeyEvent& event)
 
             int textWidth = 0;
             wxString value = m_grid->GetCellValue(row, col);
-            if ( wxEmptyString != value )
+            if (!value.empty())
             {
                 // get width of cell CONTENTS (text)
                 int y;
@@ -440,38 +440,17 @@ void wxGridCellTextEditor::SetSize(const wxRect& rectOrig)
 
     // Make the edit control large enough to allow for internal margins
     //
-    // TODO: remove this if the text ctrl sizing is improved esp. for unix
+    // TODO: remove this if the text ctrl sizing is improved
     //
-#if defined(__WXGTK__)
-    if (rect.x != 0)
-    {
-        rect.x += 1;
-        rect.y += 1;
-        rect.width -= 1;
-        rect.height -= 1;
-    }
-#elif defined(__WXMSW__)
-    if ( rect.x == 0 )
-        rect.x += 2;
-    else
-        rect.x += 3;
-
-    if ( rect.y == 0 )
-        rect.y += 2;
-    else
-        rect.y += 3;
+#if defined(__WXMSW__)
+    rect.x += 2;
+    rect.y += 2;
 
     rect.width -= 2;
     rect.height -= 2;
-#elif defined(__WXOSX__)
-    rect.x += 1;
-    rect.y += 1;
-    
-    rect.width -= 1;
-    rect.height -= 1;
-#else
-    int extra_x = ( rect.x > 2 ) ? 2 : 1;
-    int extra_y = ( rect.y > 2 ) ? 2 : 1;
+#elif !defined(__WXGTK__)
+    int extra_x = 2;
+    int extra_y = 2;
 
     #if defined(__WXMOTIF__)
         extra_x *= 2;
@@ -682,10 +661,14 @@ void wxGridCellNumberEditor::Create(wxWindow* parent,
 #if wxUSE_SPINCTRL
     if ( HasRange() )
     {
+        long style = wxSP_ARROW_KEYS |
+                     wxTE_PROCESS_ENTER |
+                     wxTE_PROCESS_TAB;
+
         // create a spin ctrl
         m_control = new wxSpinCtrl(parent, wxID_ANY, wxEmptyString,
                                    wxDefaultPosition, wxDefaultSize,
-                                   wxSP_ARROW_KEYS,
+                                   style,
                                    m_min, m_max);
 
         wxGridCellEditor::Create(parent, id, evtHandler);
@@ -699,6 +682,48 @@ void wxGridCellNumberEditor::Create(wxWindow* parent,
 #if wxUSE_VALIDATORS
         Text()->SetValidator(wxIntegerValidator<int>());
 #endif
+    }
+}
+
+void wxGridCellNumberEditor::SetSize(const wxRect& rectCell)
+{
+#if wxUSE_SPINCTRL
+    if ( HasRange() )
+    {
+        wxASSERT_MSG(m_control, "The wxSpinCtrl must be created first!");
+
+        wxSize size = Spin()->GetBestSize();
+
+        // Extend the control to fill the entire cell horizontally.
+        if ( size.x < rectCell.GetWidth() )
+            size.x = rectCell.GetWidth();
+
+        // Ensure it uses a reasonable height even if wxSpinCtrl::GetBestSize()
+        // didn't return anything useful.
+        if ( size.y <= 0 )
+            size.y = rectCell.GetHeight();
+
+        wxRect rectSpin(rectCell.GetPosition(), size);
+
+        // If possible, i.e. if we're not editing the topmost or leftmost cell,
+        // center the control rectangle in the cell.
+        if ( rectCell.GetTop() > 0 )
+        {
+            rectSpin.SetTop(rectCell.GetTop() -
+                            (rectSpin.GetHeight() - rectCell.GetHeight()) / 2);
+        }
+        if ( rectCell.GetLeft() > 0 )
+        {
+            rectSpin.SetLeft(rectCell.GetLeft() -
+                             (rectSpin.GetWidth() - rectCell.GetWidth()) / 2);
+        }
+
+        wxGridCellEditor::SetSize(rectSpin);
+    }
+    else
+#endif // wxUSE_SPINCTRL
+    {
+        wxGridCellTextEditor::SetSize(rectCell);
     }
 }
 
@@ -725,6 +750,9 @@ void wxGridCellNumberEditor::BeginEdit(int row, int col, wxGrid* grid)
     if ( HasRange() )
     {
         Spin()->SetValue((int)m_value);
+        // Select all the text for convenience of editing and for compatibility
+        // with the plain text editor.
+        Spin()->SetSelection(-1, -1);
         Spin()->SetFocus();
     }
     else
@@ -1190,83 +1218,50 @@ void wxGridCellBoolEditor::Create(wxWindow* parent,
 
 void wxGridCellBoolEditor::SetSize(const wxRect& r)
 {
-    bool resize = false;
-    wxSize size = m_control->GetSize();
-    wxCoord minSize = wxMin(r.width, r.height);
-
-    // check if the checkbox is not too big/small for this cell
-    wxSize sizeBest = m_control->GetBestSize();
-    if ( !(size == sizeBest) )
-    {
-        // reset to default size if it had been made smaller
-        size = sizeBest;
-
-        resize = true;
-    }
-
-    if ( size.x >= minSize || size.y >= minSize )
-    {
-        // leave 1 pixel margin
-        size.x = size.y = minSize - 2;
-
-        resize = true;
-    }
-
-    if ( resize )
-    {
-        m_control->SetSize(size);
-    }
-
-    // position it in the centre of the rectangle (TODO: support alignment?)
-
-#if defined(__WXGTK__) || defined (__WXMOTIF__)
-    // the checkbox without label still has some space to the right in wxGTK,
-    // so shift it to the right
-    size.x -= 8;
-#elif defined(__WXMSW__)
-    // here too, but in other way
-    size.x += 1;
-    size.y -= 2;
-#endif
-
-    int hAlign = wxALIGN_CENTRE;
-    int vAlign = wxALIGN_CENTRE;
+    int hAlign = wxALIGN_LEFT;
+    int vAlign = wxALIGN_CENTRE_VERTICAL;
     if (GetCellAttr())
-        GetCellAttr()->GetAlignment(& hAlign, & vAlign);
+        GetCellAttr()->GetNonDefaultAlignment(&hAlign, &vAlign);
 
-    int x = 0, y = 0;
-    if (hAlign == wxALIGN_LEFT)
-    {
-        x = r.x + 2;
+    const wxRect checkBoxRect =
+        wxGetContentRect(m_control->GetSize(), r, hAlign, vAlign);
 
-#ifdef __WXMSW__
-        x += 2;
-#endif
-
-        y = r.y + r.height / 2 - size.y / 2;
-    }
-    else if (hAlign == wxALIGN_RIGHT)
-    {
-        x = r.x + r.width - size.x - 2;
-        y = r.y + r.height / 2 - size.y / 2;
-    }
-    else if (hAlign == wxALIGN_CENTRE)
-    {
-        x = r.x + r.width / 2 - size.x / 2;
-        y = r.y + r.height / 2 - size.y / 2;
-    }
-
-    m_control->Move(x, y);
+    // Don't resize the checkbox, it should have its default (and fitting)
+    // size, but do move it to the right position.
+    m_control->Move(checkBoxRect.GetPosition());
 }
 
 void wxGridCellBoolEditor::Show(bool show, wxGridCellAttr *attr)
 {
     m_control->Show(show);
 
+    // Under MSW we need to set the checkbox background colour to the same
+    // colour as is used by the cell in order for it to blend in, but using
+    // just SetBackgroundColour() would be wrong as this would actually change
+    // the background of the checkbox with e.g. GTK 3, making it unusable in
+    // any theme where the check mark colour is the same, or close to, our
+    // background colour -- which happens to be the case for the default GTK 3
+    // theme, making this a rather serious problem.
+    //
+    // One possible workaround would be to set the foreground colour too, but
+    // wxRendererNative methods used in wxGridCellBoolRenderer don't currently
+    // take the colours into account, so this would mean that starting to edit
+    // a boolean field would change its colours, which would be jarring (and
+    // especially so as we currently set custom colours for all cells, not just
+    // those that really need them).
+    //
+    // A more portable solution could be to create a parent window using the
+    // background colour if it's different from the default and reparent the
+    // checkbox under it, so that the parent window colour showed through the
+    // transparent parts of the checkbox, but this would be more complicated
+    // for no real gain in practice.
+    //
+    // So, finally, just use the bespoke function that will change the
+    // background under MSW, but doesn't do anything elsewhere.
     if ( show )
     {
         wxColour colBg = attr ? attr->GetBackgroundColour() : *wxLIGHT_GREY;
-        CBox()->SetBackgroundColour(colBg);
+        CBox()->SetTransparentPartColour(colBg);
     }
 }
 
@@ -1579,6 +1574,12 @@ void wxGridCellChoiceEditor::SetParameters(const wxString& params)
     {
         m_choices.Add(tk.GetNextToken());
     }
+
+    if ( m_control )
+    {
+        Combo()->Set(m_choices);
+    }
+    //else: m_choices will be used when creating it
 }
 
 // return the value in the text control
@@ -1710,5 +1711,171 @@ wxGridCellAutoWrapStringEditor::Create(wxWindow* parent,
                                     wxTE_MULTILINE | wxTE_RICH);
 }
 
+#if wxUSE_DATEPICKCTRL
+
+// ----------------------------------------------------------------------------
+// wxGridCellDateEditor
+// ----------------------------------------------------------------------------
+
+#if defined ( __WXGTK__ )
+// Desired behavior is to close the editor control on ESC without updating the
+// table, and to close with update on ENTER. On wxMSW wxWANTS_CHARS is enough
+// for that, but on wxGTK a bit of special processing is required to forward
+// some of the key events from wxDatePickerCtrl to the generic cell editor
+// event handler.
+struct wxGridCellDateEditorKeyHandler
+{
+    explicit wxGridCellDateEditorKeyHandler(wxGridCellEditorEvtHandler* handler)
+        : m_handler(handler)
+    {}
+
+    void operator()(wxKeyEvent& event) const
+    {
+        switch ( event.GetKeyCode() )
+        {
+            case WXK_ESCAPE:
+                m_handler->OnKeyDown(event);
+                break;
+
+            case WXK_RETURN:
+            case WXK_NUMPAD_ENTER:
+                wxPostEvent(m_handler, wxCommandEvent(wxEVT_GRID_HIDE_EDITOR));
+                event.Skip();
+                break;
+
+            default:
+                event.Skip();
+                break;
+        }
+    }
+
+    wxGridCellEditorEvtHandler* m_handler;
+
+#ifdef wxNO_RTTI
+    // wxEventFunctorFunction used when an object of this class is passed to
+    // Bind() must have a default ctor when using wx RTTI implementation (see
+    // see the comment before WX_DECLARE_TYPEINFO_INLINE() in wx/typeinfo.h)
+    // and this, in turn, requires a default ctor of this class -- which will
+    // never be actually used, but must nevertheless exist.
+    wxGridCellDateEditorKeyHandler() : m_handler(NULL) { }
+#endif // wxNO_RTTI
+};
+#endif // __WXGTK__
+
+void wxGridCellDateEditor::Create(wxWindow* parent, wxWindowID id,
+                                  wxEvtHandler* evtHandler)
+{
+    m_control = new wxDatePickerCtrl(parent, id,
+                                     wxDefaultDateTime,
+                                     wxDefaultPosition,
+                                     wxDefaultSize,
+                                     wxDP_DEFAULT |
+                                     wxDP_SHOWCENTURY |
+                                     wxWANTS_CHARS);
+
+    wxGridCellEditor::Create(parent, id, evtHandler);
+
+#if defined ( __WXGTK__ )
+    // Install a handler for ESC and ENTER keys.
+    wxGridCellEditorEvtHandler* handler =
+        wxDynamicCast(evtHandler, wxGridCellEditorEvtHandler);
+    if ( handler )
+    {
+        handler->Bind(wxEVT_CHAR, wxGridCellDateEditorKeyHandler(handler));
+    }
+#endif // __WXGTK__
+}
+
+void wxGridCellDateEditor::SetSize(const wxRect& r)
+{
+    wxASSERT_MSG(m_control, "The wxGridCellDateEditor must be created first!");
+
+    const wxSize bestSize = DatePicker()->GetBestSize();
+
+    wxRect rect(r.GetPosition(), bestSize);
+
+    // Allow edit picker to become a bit wider, if necessary, but no more than
+    // twice as wide as the best width, otherwise they just look ugly.
+    if ( r.GetWidth() > bestSize.GetWidth() )
+    {
+        rect.SetWidth(wxMin(r.GetWidth(), 2*bestSize.GetWidth()));
+    }
+
+    wxGridCellEditor::SetSize(rect);
+}
+
+void wxGridCellDateEditor::BeginEdit(int row, int col, wxGrid* grid)
+{
+    wxASSERT_MSG(m_control, "The wxGridCellDateEditor must be created first!");
+
+    const wxString dateStr = grid->GetTable()->GetValue(row, col);
+    if ( !m_value.ParseDate(dateStr) )
+    {
+        // Invalidate m_value, so that it always compares different
+        // to any value returned from DatePicker()->GetValue().
+        m_value = wxDefaultDateTime;
+    }
+    else
+    {
+        DatePicker()->SetValue(m_value);
+    }
+
+    DatePicker()->SetFocus();
+}
+
+bool wxGridCellDateEditor::EndEdit(int WXUNUSED(row), int WXUNUSED(col),
+                                   const wxGrid* WXUNUSED(grid),
+                                   const wxString& WXUNUSED(oldval),
+                                   wxString *newval)
+{
+    wxASSERT_MSG(m_control, "The wxGridCellDateEditor must be created first!");
+
+    const wxDateTime date = DatePicker()->GetValue();
+
+    if ( m_value == date )
+    {
+        return false;
+    }
+
+    m_value = date;
+
+    if ( newval )
+    {
+        *newval = m_value.FormatISODate();
+    }
+
+    return true;
+}
+
+void wxGridCellDateEditor::ApplyEdit(int row, int col, wxGrid* grid)
+{
+    grid->GetTable()->SetValue(row, col, m_value.FormatISODate());
+}
+
+void wxGridCellDateEditor::Reset()
+{
+    wxASSERT_MSG(m_control, "The wxGridCellDateEditor must be created first!");
+
+    m_value = DatePicker()->GetValue();
+}
+
+wxGridCellEditor *wxGridCellDateEditor::Clone() const
+{
+    return new wxGridCellDateEditor();
+}
+
+wxString wxGridCellDateEditor::GetValue() const
+{
+    wxASSERT_MSG(m_control, "The wxGridCellDateEditor must be created first!");
+
+    return DatePicker()->GetValue().FormatISODate();
+}
+
+wxDatePickerCtrl* wxGridCellDateEditor::DatePicker() const
+{
+    return static_cast<wxDatePickerCtrl*>(m_control);
+}
+
+#endif // wxUSE_DATEPICKCTRL
 
 #endif // wxUSE_GRID

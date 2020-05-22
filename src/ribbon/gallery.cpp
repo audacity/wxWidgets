@@ -135,7 +135,7 @@ void wxRibbonGallery::CommonInit(long WXUNUSED(style))
     m_extension_button_state = wxRIBBON_GALLERY_BUTTON_NORMAL;
     m_hovered = false;
 
-    SetBackgroundStyle(wxBG_STYLE_CUSTOM);
+    SetBackgroundStyle(wxBG_STYLE_PAINT);
 }
 
 void wxRibbonGallery::OnMouseEnter(wxMouseEvent& evt)
@@ -541,12 +541,12 @@ wxRibbonGalleryItem* wxRibbonGallery::Append(const wxBitmap& bitmap, int id)
     wxASSERT(bitmap.IsOk());
     if(m_items.IsEmpty())
     {
-        m_bitmap_size = bitmap.GetSize();
+        m_bitmap_size = bitmap.GetScaledSize();
         CalculateMinSize();
     }
     else
     {
-        wxASSERT(bitmap.GetSize() == m_bitmap_size);
+        wxASSERT(bitmap.GetScaledSize() == m_bitmap_size);
     }
 
     wxRibbonGalleryItem *item = new wxRibbonGalleryItem;

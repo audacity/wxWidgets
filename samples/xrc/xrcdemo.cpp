@@ -75,8 +75,12 @@ bool MyApp::OnInit()
     // load a handler for that image type. This example uses XPMs & a gif, but
     // if you want PNGs, then add a PNG handler, etc. See wxImage::AddHandler()
     // documentation for the types of image handlers available.
+#if wxUSE_XPM
     wxImage::AddHandler(new wxXPMHandler);
+#endif
+#if wxUSE_GIF
     wxImage::AddHandler(new wxGIFHandler);
+#endif
 
     // Initialize all the XRC handlers. Always required (unless you feel like
     // going through and initializing a handler of each control type you will
@@ -85,6 +89,10 @@ bool MyApp::OnInit()
     // save some space to only initialize the ones you will be using. See
     // wxXRC docs for details.
     wxXmlResource::Get()->InitAllHandlers();
+
+    // Allow using environment variables in the file paths in the resources,
+    // while keeping the default wxXRC_USE_LOCALE flag.
+    wxXmlResource::Get()->SetFlags(wxXRC_USE_LOCALE | wxXRC_USE_ENVVARS);
 
 #if wxUSE_RIBBON
     wxXmlResource::Get()->AddHandler(new wxRibbonXmlHandler);

@@ -268,7 +268,7 @@ void wxHtmlHelpWindow::Init(wxHtmlHelpData* data)
 
 #if wxUSE_CONFIG
     m_Config = NULL;
-    m_ConfigRoot = wxEmptyString;
+    m_ConfigRoot.clear();
 #endif // wxUSE_CONFIG
 
     m_Cfg.x = m_Cfg.y = wxDefaultCoord;
@@ -278,7 +278,8 @@ void wxHtmlHelpWindow::Init(wxHtmlHelpData* data)
     m_Cfg.navig_on = true;
 
     m_NormalFonts = m_FixedFonts = NULL;
-    m_NormalFace = m_FixedFace = wxEmptyString;
+    m_NormalFace.clear();
+    m_FixedFace.clear();
 #ifdef __WXMSW__
     m_FontSize = 10;
 #else
@@ -604,15 +605,15 @@ wxHtmlHelpWindow::~wxHtmlHelpWindow()
     // PopEventHandler(); // wxhtmlhelpcontroller (not any more!)
     if (m_DataCreated)
         delete m_Data;
-    if (m_NormalFonts) delete m_NormalFonts;
-    if (m_FixedFonts) delete m_FixedFonts;
+    delete m_NormalFonts;
+    delete m_FixedFonts;
     if (m_PagesHash)
     {
         WX_CLEAR_HASH_TABLE(*m_PagesHash);
         delete m_PagesHash;
     }
 #if wxUSE_PRINTING_ARCHITECTURE
-    if (m_Printer) delete m_Printer;
+    delete m_Printer;
 #endif
 }
 
@@ -829,7 +830,7 @@ bool wxHtmlHelpWindow::KeywordSearch(const wxString& keyword,
 
     int foundcnt = 0;
     wxString foundstr;
-    wxString book = wxEmptyString;
+    wxString book;
 
     if (!m_Splitter->IsSplit())
     {
@@ -860,9 +861,9 @@ bool wxHtmlHelpWindow::KeywordSearch(const wxString& keyword,
                                   wxPD_APP_MODAL | wxPD_CAN_ABORT | wxPD_AUTO_HIDE);
 #endif
 
-        int curi;
         while (status.IsActive())
         {
+            int curi;
             curi = status.GetCurIndex();
             if (curi % 32 == 0
 #if wxUSE_PROGRESSDLG
@@ -876,7 +877,7 @@ bool wxHtmlHelpWindow::KeywordSearch(const wxString& keyword,
 #if wxUSE_PROGRESSDLG
                 progress.Update(status.GetCurIndex(), foundstr);
 #endif
-                m_SearchList->Append(status.GetName(), (void*)status.GetCurItem());
+                m_SearchList->Append(status.GetName(), const_cast<wxHtmlHelpDataItem*>(status.GetCurItem()));
             }
         }
 
@@ -1073,7 +1074,7 @@ void wxHtmlHelpWindow::ReadCustomization(wxConfigBase *cfg, const wxString& path
     wxString oldpath;
     wxString tmp;
 
-    if (path != wxEmptyString)
+    if (!path.empty())
     {
         oldpath = cfg->GetPath();
         cfg->SetPath(wxT("/") + path);
@@ -1091,13 +1092,13 @@ void wxHtmlHelpWindow::ReadCustomization(wxConfigBase *cfg, const wxString& path
     m_FontSize = cfg->Read(wxT("hcBaseFontSize"), m_FontSize);
 
     {
-        int i;
         int cnt;
         wxString val, s;
 
         cnt = cfg->Read(wxT("hcBookmarksCnt"), 0L);
         if (cnt != 0)
         {
+            int i;
             m_BookmarksNames.Clear();
             m_BookmarksPages.Clear();
             if (m_Bookmarks)
@@ -1122,7 +1123,7 @@ void wxHtmlHelpWindow::ReadCustomization(wxConfigBase *cfg, const wxString& path
     if (m_HtmlWin)
         m_HtmlWin->ReadCustomization(cfg);
 
-    if (path != wxEmptyString)
+    if (!path.empty())
         cfg->SetPath(oldpath);
 }
 
@@ -1131,7 +1132,7 @@ void wxHtmlHelpWindow::WriteCustomization(wxConfigBase *cfg, const wxString& pat
     wxString oldpath;
     wxString tmp;
 
-    if (path != wxEmptyString)
+    if (!path.empty())
     {
         oldpath = cfg->GetPath();
         cfg->SetPath(wxT("/") + path);
@@ -1170,7 +1171,7 @@ void wxHtmlHelpWindow::WriteCustomization(wxConfigBase *cfg, const wxString& pat
     if (m_HtmlWin)
         m_HtmlWin->WriteCustomization(cfg);
 
-    if (path != wxEmptyString)
+    if (!path.empty())
         cfg->SetPath(oldpath);
 }
 #endif // wxUSE_CONFIG
@@ -1295,7 +1296,6 @@ wxEND_EVENT_TABLE()
 void wxHtmlHelpWindow::OptionsDialog()
 {
     wxHtmlHelpWindowOptionsDialog dlg(this);
-    unsigned i;
 
     if (m_NormalFonts == NULL)
     {
@@ -1330,6 +1330,7 @@ void wxHtmlHelpWindow::OptionsDialog()
     // Lock updates to the choice controls before inserting potentially many
     // items into them until the end of this block.
     {
+        unsigned i;
         wxWindowUpdateLocker lockNormalFont(dlg.NormalFont);
         wxWindowUpdateLocker lockFixedFont(dlg.FixedFont);
 
@@ -1495,7 +1496,7 @@ void wxHtmlHelpWindow::OnToolbar(wxCommandEvent& event)
 
                 item = m_HtmlWin->GetOpenedPageTitle();
                 url = m_HtmlWin->GetOpenedPage();
-                if (item == wxEmptyString)
+                if (item.empty())
                     item = url.AfterLast(wxT('/'));
                 if (m_BookmarksPages.Index(url) == wxNOT_FOUND)
                 {
@@ -1612,7 +1613,7 @@ void wxHtmlHelpWindow::DoIndexFind()
 {
     wxString sr = m_IndexText->GetLineText(0);
     sr.MakeLower();
-    if (sr == wxEmptyString)
+    if (sr.empty())
     {
         DoIndexAll();
     }

@@ -4,7 +4,7 @@
 // Author:      Vadim Zeitlin, Stefan Csomor
 // Modified by:
 // Created:     2006-01-12
-// Copyright:   (c) 2006 Vadim Zeitlin <vadim@wxwindows.org>
+// Copyright:   (c) 2006 Vadim Zeitlin <vadim@wxwidgets.org>
 // Licence:     wxWindows licence
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -28,6 +28,7 @@
 #ifndef WX_PRECOMP
     #include "wx/app.h"
     #include "wx/nonownedwnd.h"
+    #include "wx/dialog.h"
 #endif // WX_PRECOMP
 
 #include "wx/log.h"
@@ -216,9 +217,12 @@ int wxGUIEventLoop::DoDispatchTimeout(unsigned long timeout)
         {
             case NSRunContinuesResponse:
             {
+                [[NSRunLoop currentRunLoop]
+                        runMode:NSDefaultRunLoopMode
+                        beforeDate:[NSDate dateWithTimeIntervalSinceNow: timeout/1000.0]];
                 if ( [[NSApplication sharedApplication]
                         nextEventMatchingMask: NSAnyEventMask
-                        untilDate: [NSDate dateWithTimeIntervalSinceNow: timeout/1000.0]
+                        untilDate: nil
                         inMode: NSDefaultRunLoopMode
                         dequeue: NO] != nil )
                     return 1;

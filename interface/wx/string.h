@@ -386,13 +386,13 @@ public:
     wxString(const char *psz, const wxMBConv& conv);
 
     /**
-       Constructs a string from the first @a nLength character of the string literal @a psz using
+       Constructs a string from the first @a nLength bytes of the string literal @a psz using
        the current locale encoding to convert it to Unicode (wxConvLibc).
     */
     wxString(const char *psz, size_t nLength);
 
     /**
-       Constructs a string from the first @a nLength character of the string literal @a psz using
+       Constructs a string from the first @a nLength bytes of the string literal @a psz using
        @a conv to convert it Unicode.
     */
     wxString(const char *psz, const wxMBConv& conv, size_t nLength);
@@ -1428,8 +1428,12 @@ public:
     bool Alloc(size_t nLen);
 
     /**
-        Minimizes the string's memory. This can be useful after a call to
-        Alloc() if too much memory were preallocated.
+        Minimizes the string's memory.
+
+        This can be useful after a call to Alloc() if too much memory were
+        preallocated.
+
+        @return Always returns @true
     */
     bool Shrink();
 
@@ -1574,13 +1578,17 @@ public:
 
     const_iterator begin() const;
     iterator begin();
+    const_iterator cbegin() const;
     const_iterator end() const;
     iterator end();
+    const_iterator cend() const;
 
     const_reverse_iterator rbegin() const;
     reverse_iterator rbegin();
+    const_reverse_iterator crbegin() const;
     const_reverse_iterator rend() const;
     reverse_iterator rend();
+    const_reverse_iterator crend() const;
 
     //@}
 
@@ -1706,6 +1714,14 @@ public:
     size_type size() const;
     wxString substr(size_t nStart = 0, size_t nLen = npos) const;
     void swap(wxString& str);
+
+    bool starts_with(const wxString &str) const;
+    bool starts_with(const char *sz) const;
+    bool starts_with(const wchar_t *sz) const;
+
+    bool ends_with(const wxString &str) const;
+    bool ends_with(const char *sz) const;
+    bool ends_with(const wchar_t *sz) const;
 
     //@}
 
@@ -2034,7 +2050,7 @@ public:
 //@{
 
 /**
-    Allows to extend a function with the signature:
+    Allows extending a function with the signature:
     @code bool SomeFunc(const wxUniChar& c) @endcode
     which operates on a single character, to an entire wxString.
 

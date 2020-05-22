@@ -19,7 +19,6 @@
  * under a certain platform
  */
 
-#define wxOSX_USE_ATSU_TEXT 0
 #define wxHAS_OPENGL_ES
 
 #define wxOSX_USE_QUICKTIME 0
@@ -214,6 +213,7 @@
 #undef wxUSE_FINDREPLDLG
 #undef wxUSE_TASKBARICON
 #undef wxUSE_REARRANGECTRL
+#undef wxUSE_NATIVE_DATAVIEWCTRL
 
 #define wxUSE_LOGWINDOW 0
 #define wxUSE_LOG_DIALOG 0
@@ -236,6 +236,7 @@
 #define wxUSE_FINDREPLDLG 0
 #define wxUSE_TASKBARICON 0
 #define wxUSE_REARRANGECTRL 0
+#define wxUSE_NATIVE_DATAVIEWCTRL 0
 
 #if wxUSE_WXHTML_HELP
 #undef wxUSE_WXHTML_HELP
@@ -372,6 +373,16 @@
 #undef wxUSE_WEBVIEW
 #define wxUSE_WEBVIEW 0
 #endif
+
+#if wxUSE_SECRETSTORE
+    #undef wxUSE_SECRETSTORE
+    #define wxUSE_SECRETSTORE 0
+#endif
+
+// IconRef datatype does not exist on iOS
+
+#undef wxOSX_USE_ICONREF
+#define wxOSX_USE_ICONREF 0
 
 #endif
     /* _WX_OSX_IPHONE_CHKCONF_H_ */

@@ -53,6 +53,68 @@ enum wxShowEffect
 
 
 /**
+    Values for wxWindow::EnableTouchEvents() mask.
+
+    The values other than ::wxTOUCH_NONE and ::wxTOUCH_ALL_GESTURES can be
+    combined together to request enabling events for the specified gestures and
+    for them only.
+
+    @since 3.1.1
+ */
+enum
+{
+    /**
+        Don't generate any touch events.
+     */
+    wxTOUCH_NONE,
+
+    /**
+        Generate wxPanGestureEvent for vertical pans.
+
+        Note that under macOS horizontal pan events are also enabled when this
+        flag is specified.
+     */
+    wxTOUCH_VERTICAL_PAN_GESTURE,
+
+    /**
+        Generate wxPanGestureEvent for horizontal pans.
+
+        Note that under macOS vertical pan events are also enabled when this
+        flag is specified.
+     */
+    wxTOUCH_HORIZONTAL_PAN_GESTURE,
+
+    /**
+        Generate wxPanGestureEvent for any pans.
+
+        This is just a convenient combination of wxTOUCH_VERTICAL_PAN_GESTURE
+        and wxTOUCH_HORIZONTAL_PAN_GESTURE.
+     */
+    wxTOUCH_PAN_GESTURES,
+
+    /**
+        Generate wxZoomGestureEvent.
+     */
+    wxTOUCH_ZOOM_GESTURE,
+
+    /**
+        Generate wxRotateGestureEvent.
+     */
+    wxTOUCH_ROTATE_GESTURE,
+
+    /**
+        Generate events for press or tap gestures such as wxTwoFingerTapEvent,
+        wxLongPressEvent and wxPressAndTapEvent.
+     */
+    wxTOUCH_PRESS_GESTURES,
+
+    /**
+        Enable all supported gesture events.
+     */
+    wxTOUCH_ALL_GESTURES
+};
+
+/**
    flags for SendSizeEvent()
 */
 enum
@@ -195,7 +257,7 @@ enum wxWindowVariant
     @style{wxWS_EX_BLOCK_EVENTS}
            wxCommandEvents and the objects of the derived classes are
            forwarded to the parent window and so on recursively by default.
-           Using this flag for the given window allows to block this
+           Using this flag for the given window allows blocking this
            propagation at this window, i.e. prevent the events from being
            propagated further upwards. Dialogs have this flag on by default
            for the reasons explained in the @ref overview_events.
@@ -296,6 +358,7 @@ public:
             Pointer to a parent window.
         @param id
             Window identifier. If wxID_ANY, will automatically create an identifier.
+            See @ref overview_windowids for more information about IDs.
         @param pos
             Window position. wxDefaultPosition indicates that wxWidgets
             should generate a default position for the window.
@@ -329,6 +392,63 @@ public:
     virtual ~wxWindow();
 
 
+    /**
+        Construct the actual window object after creating the C++ object.
+
+        The non-default constructor of wxWindow class does two things: it
+        initializes the C++ object and it also creates the window object in the
+        underlying graphical toolkit. The Create() method can be used to
+        perform the second part later, while the default constructor can be
+        used to perform the first part only.
+
+        Please note that the underlying window must be created exactly once,
+        i.e. if you use the default constructor, which doesn't do this, you @em
+        must call Create() before using the window and if you use the
+        non-default constructor, you can @em not call Create(), as the
+        underlying window is already created.
+
+        Note that it is possible and, in fact, useful, to call some methods on
+        the object between creating the C++ object itself and calling Create()
+        on it, e.g. a common pattern to avoid showing the contents of a window
+        before it is fully initialized is:
+        @code
+            wxPanel* panel = new wxPanel(); // Note: default constructor used.
+            panel->Hide(); // Can be called before actually creating it.
+            panel->Create(parent, wxID_ANY, ...); // Won't be shown yet.
+            ... create all the panel children ...
+            panel->Show(); // Now everything will be shown at once.
+        @endcode
+
+        Also note that it is possible to create an object of a derived type and
+        then call Create() on it:
+        @code
+            // Suppose we have this function (which would typically be in a
+            // different translation unit (file) from the rest of the code).
+            wxWindow* MyCreateWindowObjectFunction() {
+                return new MyCustomClassDerivingFromWindow();
+            }
+
+            // Then we can create a window of MyCustomClassDerivingFromWindow
+            // class without really knowing about this type, as we would have
+            // to do if we wanted to use the non-default constructor, like this:
+
+            // First create the C++ object using the factory function.
+            wxWindow* window = MyCreateWindowObjectFunction();
+
+            // And now create the underlying window.
+            //
+            // This calls the base wxWindow::Create() as it is not virtual, so
+            // the derived class can't customize this part.
+            window->Create(parent, wxID_ANY, ...);
+        @endcode
+        This is notably used by @ref overview_xrc.
+
+        The parameters of this method have exactly the same meaning as the
+        non-default constructor parameters, please refer to them for their
+        description.
+
+        @return @true if window creation succeeded or @false if it failed
+     */
     bool Create(wxWindow *parent,
                 wxWindowID id,
                 const wxPoint& pos = wxDefaultPosition,
@@ -366,7 +486,7 @@ public:
         container windows.
      */
     virtual bool AcceptsFocusRecursively() const;
-    
+
     /**
      Can this window itself have focus?
     */
@@ -374,7 +494,7 @@ public:
 
     /**
        Can this window have focus right now?
-        
+
        If this method returns true, it means that calling SetFocus() will
        put focus either to this window or one of its children, if you need
        to know whether this window accepts focus itself, use IsFocusable()
@@ -886,20 +1006,13 @@ public:
     virtual wxSize WindowToClientSize(const wxSize& size) const;
 
     /**
-        Sizes the window so that it fits around its subwindows.
+        Sizes the window to fit its best size.
 
-        This function won't do anything if there are no subwindows and will only really
-        work correctly if sizers are used for the subwindows layout.
+        Using this function is equivalent to setting window size to the return
+        value of GetBestSize().
 
-        Also, if the window has exactly one subwindow it is better (faster and the result
-        is more precise as Fit() adds some margin to account for fuzziness of its calculations)
-        to call:
-
-        @code
-        window->SetClientSize(child->GetSize());
-        @endcode
-
-        instead of calling Fit().
+        Note that, unlike SetSizerAndFit(), this function only changes the
+        current window size and doesn't change its minimal size.
 
         @see @ref overview_windowsizing
     */
@@ -989,7 +1102,7 @@ public:
     static wxPoint FromDIP(const wxPoint& pt, const wxWindow* w);
 
     /// @overload
-    static wxSize FromDIP(const wxSize& sz, const wxWindow* w);
+    static int FromDIP(int d, const wxWindow* w);
 
 
     /**
@@ -1056,7 +1169,7 @@ public:
     static wxPoint ToDIP(const wxPoint& pt, const wxWindow* w);
 
     /// @overload
-    static wxSize ToDIP(const wxSize& sz, const wxWindow* w);
+    static int ToDIP(int d, const wxWindow* w);
 
     /**
         This functions returns the best acceptable minimal size for the window.
@@ -1297,7 +1410,7 @@ public:
     InformFirstDirection(int direction,
                          int size,
                          int availableOtherDir);
-    
+
     /**
         Resets the cached best size value so it will be recalculated the next time it
         is needed.
@@ -1380,9 +1493,14 @@ public:
     void SetClientSize(const wxRect& rect);
 
     /**
-        This normally does not need to be called by user code.
-        It is called when a window is added to a sizer, and is used so the window
-        can remove itself from the sizer when it is destroyed.
+        Used by wxSizer internally to notify the window about being managed by
+        the given sizer.
+
+        This method should not be called from outside the library, unless
+        you're implementing a custom sizer class -- and in the latter case you
+        must call this method with the pointer to the sizer itself whenever a
+        window is added to it and with @NULL argument when the window is
+        removed from it.
     */
     void SetContainingSizer(wxSizer* sizer);
 
@@ -1680,7 +1798,7 @@ public:
     wxRect GetClientRect() const;
 
 
-    
+
     /**
         Moves the window to the given position.
 
@@ -1922,6 +2040,20 @@ public:
         version can be used without having to create an object first.
     */
     virtual wxVisualAttributes GetDefaultAttributes() const;
+
+    /**
+        Return the DPI of the display used by this window.
+
+        The returned value can be different for different windows on systems
+        with support for per-monitor DPI values, such as Microsoft Windows 10.
+
+        If the DPI is not available, returns @c wxSize(0,0) object.
+
+        @see wxDisplay::GetPPI(), wxDPIChangedEvent
+
+        @since 3.1.3
+     */
+    virtual wxSize GetDPI() const;
 
     /**
         Returns the font for this window.
@@ -2217,6 +2349,12 @@ public:
     bool UseBgCol() const;
 
     /**
+        Return @true if a background colour has been set for this window.
+        Same as @ref UseBgCol()
+    */
+    bool UseBackgroundColour() const;
+
+    /**
         Sets the font of the window but prevents it from being inherited by the
         children of this window.
 
@@ -2231,6 +2369,18 @@ public:
         @see SetForegroundColour(), InheritAttributes()
     */
     void SetOwnForegroundColour(const wxColour& colour);
+
+    /**
+        Return @true if a foreground colour has been set for this window.
+    */
+    bool UseForegroundColour() const;
+
+    /**
+        Return @true if this window inherits the foreground colour from its parent.
+
+        @see SetOwnForegroundColour(), InheritAttributes()
+    */
+    bool InheritsForegroundColour() const;
 
     /**
         @deprecated use wxDC::SetPalette instead.
@@ -2256,10 +2406,15 @@ public:
 
         Dialogs, notebook pages and the status bar have this flag set to @true
         by default so that the default look and feel is simulated best.
+
+        @see GetThemeEnabled()
     */
     virtual void SetThemeEnabled(bool enable);
 
     /**
+        Returns @true if the window uses the system theme for drawing its background.
+
+        @see SetThemeEnabled()
      */
     virtual bool GetThemeEnabled() const;
 
@@ -2703,6 +2858,14 @@ public:
         disabled, all of its children are disabled as well and they are reenabled again
         when the parent is.
 
+        A window can be created initially disabled by calling this method on it
+        @e before calling Create() to create the actual underlying window, e.g.
+        @code
+            wxWindow* w = new MyWindow(); // Note: default ctor is used here.
+            w->Enable(false);
+            w->Create(parent, ... all the usual non-default ctor arguments ...);
+        @endcode
+
         @param enable
             If @true, enables the window for input. If @false, disables the window.
 
@@ -2891,6 +3054,9 @@ public:
         The position where the menu will appear can be specified either as a
         wxPoint @a pos or by two integers (@a x and @a y).
 
+        Note that this function switches focus to this window before showing
+        the menu.
+
         @remarks Just before the menu is popped up, wxMenu::UpdateUI is called to
                  ensure that the menu items are in the correct state.
                  The menu does not get deleted by the window.
@@ -3051,6 +3217,9 @@ public:
 
     /**
         Sets the layout direction for this window.
+
+        This function is only supported under MSW and GTK platforms, but not
+        under Mac currently.
     */
     virtual void SetLayoutDirection(wxLayoutDirection dir);
 
@@ -3253,10 +3422,15 @@ public:
     void SetSizer(wxSizer* sizer, bool deleteOld = true);
 
     /**
-        This method calls SetSizer() and then wxSizer::SetSizeHints which sets the initial
-        window size to the size needed to accommodate all sizer elements and sets the
-        size hints which, if this window is a top level one, prevent the user from
-        resizing it to be less than this minimal size.
+        Associate the sizer with the window and set the window size and minimal
+        size accordingly.
+
+        This method calls SetSizer() and then wxSizer::SetSizeHints() which
+        sets the initial window size to the size needed to accommodate all
+        sizer elements and sets the minimal size to the same size, this
+        preventing the user from resizing this window to be less than this
+        minimal size (if it's a top-level window which can be directly resized
+        by the user).
     */
     void SetSizerAndFit(wxSizer* sizer, bool deleteOld = true);
 
@@ -3284,15 +3458,20 @@ public:
     void SetConstraints(wxLayoutConstraints* constraints);
 
     /**
-        Invokes the constraint-based layout algorithm or the sizer-based algorithm
-        for this window.
+        Lays out the children of this window using the associated sizer.
 
-        This function does not get called automatically when the window is resized
-        because lots of windows deriving from wxWindow does not need this functionality.
-        If you want to have Layout() called automatically, you should derive
-        from wxPanel (see wxPanel::Layout).
+        If a sizer hadn't been associated with this window (see SetSizer()),
+        this function doesn't do anything, unless this is a top level window
+        (see wxTopLevelWindow::Layout()).
+
+        Note that this method is called automatically when the window size
+        changes if it has the associated sizer (or if SetAutoLayout() with
+        @true argument had been explicitly called), ensuring that it is always
+        laid out correctly.
 
         @see @ref overview_windowsizing
+
+        @returns Always returns @true, the return value is not useful.
     */
     virtual bool Layout();
 
@@ -3403,6 +3582,28 @@ public:
     */
     virtual void WarpPointer(int x, int y);
 
+    /**
+        Request generation of touch events for this window.
+
+        Each call to this function supersedes the previous ones, i.e. if you
+        want to receive events for both zoom and rotate gestures, you need to
+        call
+        @code
+            EnableTouchEvents(wxTOUCH_ZOOM_GESTURE | wxTOUCH_ROTATE_GESTURE);
+        @endcode
+        instead of calling it twice in a row as the second call would disable
+        the first gesture.
+
+        @param eventsMask Either wxTOUCH_NONE or wxTOUCH_ALL_GESTURES to
+            disable or enable gesture events for this window.
+
+        @return @true if the specified events were enabled or @false if the
+            current platform doesn't support touch events.
+
+        @since 3.1.1
+     */
+    virtual bool EnableTouchEvents(int eventsMask);
+
     //@}
 
 
@@ -3440,7 +3641,7 @@ public:
     */
     wxBorder GetBorder() const;
 
-    
+
     /**
         Does the window-specific updating after processing the update event.
         This function is called by UpdateWindowUI() in order to check return
@@ -3552,7 +3753,7 @@ public:
     */
     virtual bool IsTopLevel() const;
 
-    
+
     /**
         This virtual function is normally only used internally, but
         sometimes an application may need it to implement functionality
@@ -3589,7 +3790,8 @@ public:
             or wxMOD_WIN specifying the modifier keys that have to be pressed along
             with the key.
         @param virtualKeyCode
-            The virtual key code of the hotkey.
+            The key code of the hotkey, e.g. an ASCII character such as @c 'K'
+            or one of elements of wxKeyCode enum.
 
         @return @true if the hotkey was registered successfully. @false if some
                  other application already registered a hotkey with this
@@ -3722,7 +3924,9 @@ public:
         or panel item label. If @a parent is @NULL, the search will start from all
         top-level frames and dialog boxes; if non-@NULL, the search will be
         limited to the given window hierarchy.
-        The search is recursive in both cases.
+
+        The search is recursive in both cases and, unlike with FindWindow(),
+        recurses into top level child windows too.
 
         @see FindWindow()
 
@@ -3739,10 +3943,14 @@ public:
         and dialog boxes; if non-@NULL, the search will be limited to the given
         window hierarchy.
 
-        The search is recursive in both cases. If no window with such name is found,
-        FindWindowByLabel() is called.
+        The search is recursive in both cases and, unlike FindWindow(),
+        recurses into top level child windows too.
 
-        @see FindWindow()
+        If no window with such name is found, FindWindowByLabel() is called,
+        i.e. the name is interpreted as (internal) name first but if this
+        fails, it's internal as (user-visible) label. As this behaviour may be
+        confusing, it is usually better to use either the FindWindow() overload
+        taking the name or FindWindowByLabel() directly.
 
         @return Window with the given @a name or @NULL if not found.
     */

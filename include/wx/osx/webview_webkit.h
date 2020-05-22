@@ -14,7 +14,7 @@
 
 #include "wx/defs.h"
 
-#if wxUSE_WEBVIEW && wxUSE_WEBVIEW_WEBKIT && defined(__WXOSX__) 
+#if wxUSE_WEBVIEW && wxUSE_WEBVIEW_WEBKIT && defined(__WXOSX__)
 
 #include "wx/control.h"
 #include "wx/webview.h"
@@ -86,10 +86,10 @@ public:
 
     //Find function
     virtual long Find(const wxString& text, int flags = wxWEBVIEW_FIND_DEFAULT) wxOVERRIDE
-    { 
+    {
         wxUnusedVar(text);
         wxUnusedVar(flags);
-        return wxNOT_FOUND; 
+        return wxNOT_FOUND;
     }
 
     //Clipboard functions
@@ -112,7 +112,7 @@ public:
     virtual wxString GetSelectedSource() const wxOVERRIDE;
     virtual void ClearSelection() wxOVERRIDE;
 
-    void RunScript(const wxString& javascript) wxOVERRIDE;
+    bool RunScript(const wxString& javascript, wxString* output = NULL) wxOVERRIDE;
 
     //Virtual Filesystem Support
     virtual void RegisterHandler(wxSharedPtr<wxWebViewHandler> handler) wxOVERRIDE;
@@ -160,11 +160,13 @@ private:
 
     OSXWebViewPtr m_webView;
 
+    WX_NSObject m_loadDelegate;
+    WX_NSObject m_policyDelegate;
+    WX_NSObject m_UIDelegate;
+
     // we may use this later to setup our own mouse events,
     // so leave it in for now.
     void* m_webKitCtrlEventHandler;
-    //It should be WebView*, but WebView is an Objective-C class
-    //TODO: look into using DECLARE_WXCOCOA_OBJC_CLASS rather than this.
 };
 
 class WXDLLIMPEXP_WEBVIEW wxWebViewFactoryWebKit : public wxWebViewFactory

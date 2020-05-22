@@ -27,7 +27,7 @@
 #include "wx/secretstore.h"
 #include "wx/private/secretstore.h"
 
-#include "wx/log.h"                     // wxSysErrorMsg()
+#include "wx/log.h"                     // wxSysErrorMsgStr()
 
 // Somewhat surprisingly, wincred.h is not self-contained and relies on some
 // standard Windows macros being defined without including the headers defining
@@ -64,13 +64,11 @@ public:
                       const wxSecretValueImpl& secret,
                       wxString& errmsg) wxOVERRIDE
     {
-        const wxString target = MakeTargetName(service, user);
-
         CREDENTIAL cred;
         wxZeroMemory(cred);
         cred.Type = CRED_TYPE_GENERIC;
-        cred.TargetName = const_cast<TCHAR*>(target.t_str());
-        cred.UserName = const_cast<TCHAR*>(user.t_str());
+        cred.TargetName = const_cast<TCHAR*>(static_cast<const TCHAR*>(service.t_str()));
+        cred.UserName = const_cast<TCHAR*>(static_cast<const TCHAR*>(user.t_str()));
         cred.CredentialBlobSize = secret.GetSize();
         cred.CredentialBlob = static_cast<BYTE *>(const_cast<void*>(secret.GetData()));
 
@@ -84,70 +82,51 @@ public:
 
         if ( !::CredWrite(&cred, 0) )
         {
-            errmsg = wxSysErrorMsg();
+            errmsg = wxSysErrorMsgStr();
             return false;
         }
 
         return true;
     }
 
-    virtual wxSecretValueImpl* Load(const wxString& service,
-                                    const wxString& user,
-                                    wxString& errmsg) const wxOVERRIDE
+    virtual bool Load(const wxString& service,
+                      wxString* user,
+                      wxSecretValueImpl** secret,
+                      wxString& errmsg) const wxOVERRIDE
     {
-        const wxString target = MakeTargetName(service, user);
-
         CREDENTIAL* pcred = NULL;
-        if ( !::CredRead(target.t_str(), CRED_TYPE_GENERIC, 0, &pcred) || !pcred )
+        if ( !::CredRead(service.t_str(), CRED_TYPE_GENERIC, 0, &pcred) || !pcred )
         {
             // Not having the password for this service/user combination is not
             // an error, but anything else is.
             if ( ::GetLastError() != ERROR_NOT_FOUND )
-                errmsg = wxSysErrorMsg();
+                errmsg = wxSysErrorMsgStr();
 
-            return NULL;
+            return false;
         }
 
         CredentialPtr ensureFree(pcred);
-        return new wxSecretValueGenericImpl(pcred->CredentialBlobSize,
-                                            pcred->CredentialBlob);
+
+        *user = pcred->UserName;
+        *secret = new wxSecretValueGenericImpl(pcred->CredentialBlobSize,
+                                               pcred->CredentialBlob);
+
+        return true;
     }
 
     virtual bool Delete(const wxString& service,
-                        const wxString& user,
                         wxString& errmsg) wxOVERRIDE
     {
-        const wxString target = MakeTargetName(service, user);
-
-        if ( !::CredDelete(target.t_str(), CRED_TYPE_GENERIC, 0) )
+        if ( !::CredDelete(service.t_str(), CRED_TYPE_GENERIC, 0) )
         {
             // Same logic as in Load() above.
             if ( ::GetLastError() != ERROR_NOT_FOUND )
-                errmsg = wxSysErrorMsg();
+                errmsg = wxSysErrorMsgStr();
 
             return false;
         }
 
         return true;
-    }
-
-private:
-    // Return the string used as the "target name" for the API functions.
-    // We need to combine both service and user into a single string as it
-    // needs to be unique, i.e. otherwise we couldn't store two different
-    // passwords for two different users of the same service and we do want to
-    // be able to do this.
-    static
-    wxString MakeTargetName(const wxString& service, const wxString& user)
-    {
-        // The exact way of combining the service and user strings together is
-        // completely arbitrary, we could also use "service:user" or
-        // "user@service", there doesn't seem to be any standard about it, but
-        // doing it like this has the advantage of keeping all passwords for
-        // the given service together in the "Credential Manager" GUI and slash
-        // is used by some standard programs, e.g. the built-in RDP client
-        // stores its passwords under "TERMSRV/hostname".
-        return service + wxS("/") + user;
     }
 };
 

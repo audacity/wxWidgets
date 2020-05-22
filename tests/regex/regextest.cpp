@@ -55,7 +55,6 @@
 using CppUnit::Test;
 using CppUnit::TestCase;
 using CppUnit::TestSuite;
-using CppUnit::Exception;
 
 using std::string;
 using std::vector;
@@ -78,7 +77,7 @@ public:
 
 protected:
     // run this testcase
-    void runTest();
+    void runTest() wxOVERRIDE;
 
 private:
     // workers
@@ -205,7 +204,7 @@ void RegExTestCase::parseFlags(const wxString& flags)
             case 'i': m_compileFlags |= wxRE_ICASE; break;
             case 'o': m_compileFlags |= wxRE_NOSUB; break;
             case 'n': m_compileFlags |= wxRE_NEWLINE; break;
-            case 't': if (strchr("ep", m_mode)) break; // else fall through...
+            case 't': if (strchr("ep", m_mode)) break; wxFALLTHROUGH;
 
             // anything else we must skip the test
             default:
@@ -375,15 +374,8 @@ void RegExTestSuite::add(
 
     va_end(ap);
 
-    try {
-        addTest(new RegExTestCase(
-            name, mode, id, flags, pattern, data, expected_results));
-    }
-    catch (Exception& e) {
-        wxLogInfo(wxString::Format(wxT("skipping: %s\n %s\n"),
-            wxString(name.c_str(), wxConvUTF8).c_str(),
-            wxString(e.what(), wxConvUTF8).c_str()));
-    }
+    addTest(new RegExTestCase(
+        name, mode, id, flags, pattern, data, expected_results));
 }
 
 

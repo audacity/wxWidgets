@@ -48,20 +48,9 @@ be accessed using XRCCTRL().
 @section overview_xrcformat_root Resource Root Element
 
 The root element is always @c \<resource\>. It has one optional attribute, @c
-version. If set, it specifies version of the file. In absence of @c version
-attribute, the default is @c "0.0.0.0".
-
-The version consists of four integers separated by periods.  The first three
-components are major, minor and release number of the wxWidgets release when
-the change was introduced, the last one is revision number and is 0 for the
-first incompatible change in given wxWidgets release, 1 for the second and so
-on.  The version changes only if there was an incompatible change introduced;
-merely adding new kind of objects does not constitute incompatible change.
-
-At the time of writing, the latest version is @c "2.5.3.0".
-
-Note that even though @c version attribute is optional, it should always be
-specified to take advantage of the latest capabilities:
+version which, while optional, should always be set to the latest version. At
+the time of writing, it is @c "2.5.3.0", so all XRC documents should look like
+the following:
 
 @code
 <?xml version="1.0"?>
@@ -69,6 +58,13 @@ specified to take advantage of the latest capabilities:
     ...
 </resource>
 @endcode
+
+The version consists of four integers separated by periods.  The first three
+components are major, minor and release number of the wxWidgets release when
+the change was introduced, the last one is revision number and is 0 for the
+first incompatible change in given wxWidgets release, 1 for the second and so
+on.  The version changes only if there was an incompatible change introduced;
+merely adding new kind of objects does not constitute incompatible change.
 
 @c \<resource\> may have arbitrary number of
 @ref overview_xrcformat_objects "object elements" as its children; they are referred
@@ -356,6 +352,9 @@ wxFileSystem URL) of the bitmap to use. For example:
 The value is interpreted as path relative to the location of XRC file where the
 reference occurs.
 
+Bitmap file paths can include environment variables that are expanded if
+wxXRC_USE_ENVVARS was passed to the wxXmlResource constructor.
+
 Alternatively, it is possible to specify the bitmap using wxArtProvider IDs.
 In this case, the property element has no textual value (filename) and instead
 has the @c stock_id XML attribute that contains stock art ID as accepted by
@@ -393,6 +392,16 @@ Examples:
 @endcode
 
 
+@subsection overview_xrcformat_type_showeffect Show Effect
+
+One of the @ref wxShowEffect values.
+
+Example:
+@code
+<showeffect>wxSHOW_EFFECT_EXPAND</showeffect>
+@endcode
+
+
 @subsection overview_xrcformat_type_font Font
 
 XRC uses similar, but more flexible, abstract description of fonts to that
@@ -407,19 +416,28 @@ and can be one of the following "sub-properties":
 
 @beginTable
 @hdr3col{property, type, description}
-@row3col{size, unsigned integer,
+@row3col{size, float,
     Pixel size of the font (default: wxNORMAL_FONT's size or @c sysfont's
     size if the @c sysfont property is used or the current size of the font
-    of the enclosing control if the @c inherit property is used.}
+    of the enclosing control if the @c inherit property is used. Note that
+    versions of wxWidgets until 3.1.2 only supported integer values for the
+    font size.}
 @row3col{style, enum,
     One of "normal", "italic" or "slant" (default: normal).}
-@row3col{weight, enum,
-    One of "normal", "bold" or "light" (default: normal).}
+@row3col{weight, enum or integer,
+    One of "thin", "extralight", "light", "normal", "medium", "semibold",
+    "bold", "extrabold", "heavy", "extraheavy", corresponding to the similarly
+    named elements of ::wxFontWeight enum, or a numeric value between 1 and
+    1000 (default: normal). Note that versions of wxWidgets until 3.1.2 only
+    supported "light", "normal" and "bold" values for weight.}
 @row3col{family, enum,
     One of "default", "roman", "script", "decorative", "swiss", "modern" or "teletype"
     (default: default).}
 @row3col{underlined, @ref overview_xrcformat_type_bool,
     Whether the font should be underlined (default: 0).}
+@row3col{strikethrough, @ref overview_xrcformat_type_bool,
+    Whether the strikethrough font should be used (default: 0). This property
+    is only supported since wxWidgets 3.1.2.}
 @row3col{face, ,
     Comma-separated list of face names; the first one available is used
     (default: unspecified).}
@@ -1016,6 +1034,25 @@ Example:
 @endTable
 
 
+@subsubsection xrc_wxdataviewctrl wxDataViewCtrl
+
+No additional properties.
+
+
+@subsubsection xrc_wxdataviewlistctrl wxDataViewListCtrl
+
+No additional properties.
+
+
+@subsubsection xrc_wxdataviewtreectrl wxDataViewTreeCtrl
+
+@beginTable
+@hdr3col{property, type, description}
+@row3col{imagelist, @ref overview_xrcformat_type_imagelist,
+     Image list to use for the images (default: none).}
+@endTable
+
+
 @subsubsection xrc_wxdatepickerctrl wxDatePickerCtrl
 
 No additional properties.
@@ -1194,6 +1231,40 @@ page.
 @endTable
 
 
+@subsubsection xrc_wxinfobar wxInfoBar
+
+@beginTable
+@hdr3col{property, type, description}
+@row3col{showeffect, @ref overview_xrcformat_type_showeffect,
+     The effect to use when showing the bar (optional).}
+@row3col{hideeffect, @ref overview_xrcformat_type_showeffect,
+     The effect to use when hiding the bar (optional).}
+@row3col{effectduration, integer,
+     The duration of the animation used when showing or hiding the bar
+     (optional).}
+@row3col{button, object,
+     Add a button to be shown in the info bar (see wxInfoBar::AddButton);
+     this property is of class "button" has name (can be one of standard
+     button ID) and has optional label property. If no buttons are added
+     to the info bar, the default "Close" button will be shown.}
+@endTable
+
+Example:
+@code
+<object class="wxInfoBar">
+    <effectduration>1000</effectduration>
+    <showeffect>wxSHOW_EFFECT_EXPAND</showeffect>
+    <hideeffect>wxSHOW_EFFECT_SLIDE_TO_RIGHT</hideeffect>
+    <object class="button" name="wxID_UNDO"/>
+    <object class="button" name="wxID_REDO">
+        <label>Redo Custom Label</label>
+    </object>
+</object>
+@endcode
+
+@since 3.1.3
+
+
 @subsubsection xrc_wxlistbox wxListBox
 
 @beginTable
@@ -1353,7 +1424,7 @@ must be of wxMDIChildFrame type.
 wxMDIChildFrame supports the same properties that @ref xrc_wxfrane and
 @ref xrc_wxmdiparentframe do.
 
-wxMDIChildFrame can only be used as as immediate child of @ref
+wxMDIChildFrame can only be used as immediate child of @ref
 xrc_wxmdiparentframe.
 
 wxMDIChildFrame may have optional children: either exactly one
@@ -1599,6 +1670,11 @@ can also have some optional XML @em attributes (not properties!):
      Is the button enabled (default: 1)?}
 @row3col{hidden, @ref overview_xrcformat_type_bool,
      Is the button hidden initially (default: 0)?}
+@row3col{label, @ref overview_xrcformat_type_bool,
+     Should this item text be interpreted as a label, i.e. escaping underscores
+     in it as done for the label properties of other controls? This attribute
+     exists since wxWidgets 3.1.1 and was always treated as having the value of
+     0, which still remains its default, until then.}
 @endTable
 
 Example:
@@ -1615,7 +1691,7 @@ Example:
         <item tooltip="E=mc^2">Energy 98.3</item>
         <item helptext="Favourite chukcha's radio">CHUM FM</item>
         <item>92FM</item>
-        <item hidden="1">Very quit station</item>
+        <item hidden="1">Very quiet station</item>
     </content>
 </object>
 @endcode
@@ -1910,6 +1986,19 @@ wxWidgets 2.9.5, another one:
 @endTable
 
 
+@subsubsection xrc_wxspinctrldouble wxSpinCtrlDouble
+
+wxSpinCtrlDouble supports the same properties as @ref xrc_wxspinbutton but @c
+value, @c min and @a max are all of type float instead of int. There is one
+additional property:
+@beginTable
+@row3col{inc, float,
+    The amount by which the number is changed by a single arrow press.}
+@endTable
+
+This handler was added in wxWidgets 3.1.1.
+
+
 @subsubsection xrc_wxsplitterwindow wxSplitterWindow
 
 @beginTable
@@ -1936,6 +2025,9 @@ child and the second one for right/bottom child window.
 @hdr3col{property, type, description}
 @row3col{value, @ref overview_xrcformat_type_text,
     Initial value of the control (default: empty).}
+@row3col{hint, @ref overview_xrcformat_type_text,
+    Descriptive text shown in the empty control (default: "Search"). This
+    property is new since wxWidgets 3.1.1.}
 @endTable
 
 
@@ -2019,6 +2111,10 @@ No additional properties.
      Label to display on the button (default: empty).}
 @row3col{checked, @ref overview_xrcformat_type_bool,
      Should the button be checked/pressed initially (default: 0)?}
+@row3col{bitmap, @ref overview_xrcformat_type_bitmap,
+    Bitmap to display in the button (optional). @since 3.1.1}
+@row3col{bitmapposition, @c wxLEFT|wxRIGHT|wxTOP|wxBOTTOM,
+    Position of the bitmap in the button, see wxButton::SetBitmapPosition() (default: wxLEFT). @since 3.1.1}
 @endTable
 
 @subsubsection xrc_wxtoolbar wxToolBar
@@ -2412,6 +2508,9 @@ support the following properties:
     Sizer orientation, "wxHORIZONTAL" or "wxVERTICAL" (default: wxHORIZONTAL).}
 @row3col{label, @ref overview_xrcformat_type_text,
     Label to be used for the static box around the sizer (default: empty).}
+@row3col{windowlabel, any window,
+    Window to be used instead of the plain text label (default: none).
+    This property is only available since wxWidgets 3.1.1.}}
 @endTable
 
 @subsection overview_xrcformat_wxgridsizer wxGridSizer

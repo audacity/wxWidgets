@@ -28,12 +28,12 @@ public:
                  const wxSize& sz = wxDefaultSize,
                  const wxString& name = wxFileDialogNameStr);
 
-    virtual void GetPaths(wxArrayString& paths) const;
-    virtual void GetFilenames(wxArrayString& files) const;
-    virtual bool SupportsExtraControl() const { return true; }
+    virtual void GetPaths(wxArrayString& paths) const wxOVERRIDE;
+    virtual void GetFilenames(wxArrayString& files) const wxOVERRIDE;
+    virtual bool SupportsExtraControl() const wxOVERRIDE { return true; }
     void MSWOnInitDialogHook(WXHWND hwnd);
 
-    virtual int ShowModal();
+    virtual int ShowModal() wxOVERRIDE;
 
     // wxMSW-specific implementation from now on
     // -----------------------------------------
@@ -44,12 +44,15 @@ public:
     // called from the hook procedure on CDN_SELCHANGE.
     void MSWOnSelChange(WXHWND hDlg);
 
+    // called from the hook procedure on CDN_TYPECHANGE.
+    void MSWOnTypeChange(WXHWND hDlg, int nFilterIndex);
+
 protected:
 
-    virtual void DoMoveWindow(int x, int y, int width, int height);
-    virtual void DoCentre(int dir);
-    virtual void DoGetSize( int *width, int *height ) const;
-    virtual void DoGetPosition( int *x, int *y ) const;
+    virtual void DoMoveWindow(int x, int y, int width, int height) wxOVERRIDE;
+    virtual void DoCentre(int dir) wxOVERRIDE;
+    virtual void DoGetSize( int *width, int *height ) const wxOVERRIDE;
+    virtual void DoGetPosition( int *x, int *y ) const wxOVERRIDE;
 
 private:
     wxArrayString m_fileNames;

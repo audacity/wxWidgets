@@ -163,6 +163,19 @@ wxSecretStore::~wxSecretStore()
 // ----------------------------------------------------------------------------
 
 bool
+wxSecretStore::IsOk(wxString* errmsg) const
+{
+    if ( !m_impl )
+    {
+        if ( errmsg )
+            *errmsg = _("Not available for this platform");
+        return false;
+    }
+
+    return m_impl->IsOk(errmsg);
+}
+
+bool
 wxSecretStore::Save(const wxString& service,
                     const wxString& user,
                     const wxSecretValue& secret)
@@ -176,49 +189,53 @@ wxSecretStore::Save(const wxString& service,
     wxString err;
     if ( !m_impl->Save(service, user, *secret.m_impl, err) )
     {
-        wxLogError(_("Saving password for \"%s/%s\" failed: %s."),
-                   service, user, err);
+        wxLogError(_("Saving password for \"%s\" failed: %s."),
+                   service, err);
         return false;
     }
 
     return true;
 }
 
-wxSecretValue
-wxSecretStore::Load(const wxString& service, const wxString& user) const
-{
-    if ( !m_impl )
-        return wxSecretValue();
-
-    wxString err;
-    wxSecretValueImpl* const secret = m_impl->Load(service, user, err);
-    if ( !secret )
-    {
-        if ( !err.empty() )
-        {
-            wxLogError(_("Reading password for \"%s/%s\" failed: %s."),
-                       service, user, err);
-        }
-
-        return wxSecretValue();
-    }
-
-    return wxSecretValue(secret);
-}
-
 bool
-wxSecretStore::Delete(const wxString& service, const wxString& user)
+wxSecretStore::Load(const wxString& service,
+                    wxString& user,
+                    wxSecretValue& secret) const
 {
     if ( !m_impl )
         return false;
 
     wxString err;
-    if ( !m_impl->Delete(service, user, err) )
+    wxSecretValueImpl* secretImpl = NULL;
+    if ( !m_impl->Load(service, &user, &secretImpl, err) )
     {
         if ( !err.empty() )
         {
-            wxLogError(_("Deleting password for \"%s/%s\" failed: %s."),
-                       service, user, err);
+            wxLogError(_("Reading password for \"%s\" failed: %s."),
+                       service, err);
+        }
+
+        return false;
+    }
+
+    secret = wxSecretValue(secretImpl);
+
+    return true;
+}
+
+bool
+wxSecretStore::Delete(const wxString& service)
+{
+    if ( !m_impl )
+        return false;
+
+    wxString err;
+    if ( !m_impl->Delete(service, err) )
+    {
+        if ( !err.empty() )
+        {
+            wxLogError(_("Deleting password for \"%s\" failed: %s."),
+                       service, err);
         }
         return false;
     }

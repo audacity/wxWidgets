@@ -50,8 +50,10 @@ extern "C"
 static int wxCMPFUNC_CONV
 wxCompareFamilies (const void *a, const void *b)
 {
-  const char *a_name = pango_font_family_get_name (*(PangoFontFamily **)a);
-  const char *b_name = pango_font_family_get_name (*(PangoFontFamily **)b);
+    const PangoFontFamily* fam_a = *static_cast<PangoFontFamily* const*>(a);
+    const PangoFontFamily* fam_b = *static_cast<PangoFontFamily* const*>(b);
+    const char* a_name = pango_font_family_get_name(const_cast<PangoFontFamily*>(fam_a));
+    const char* b_name = pango_font_family_get_name(const_cast<PangoFontFamily*>(fam_b));
 
   return g_utf8_collate (a_name, b_name);
 }
@@ -81,7 +83,10 @@ bool wxFontEnumerator::EnumerateFacenames(wxFontEncoding encoding,
 #endif
         {
             const gchar *name = pango_font_family_get_name(families[i]);
-            OnFacename(wxString(name, wxConvUTF8));
+            if ( !OnFacename(wxString(name, wxConvUTF8)) )
+            {
+                break;
+            }
         }
     }
     g_free(families);

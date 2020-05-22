@@ -91,8 +91,6 @@ public:
     virtual ~wxListBox();
 
     // implement base class pure virtuals
-    virtual void Refresh(bool eraseBack = true, const wxRect *rect = NULL) wxOVERRIDE;
-
     virtual unsigned int GetCount() const wxOVERRIDE;
     virtual wxString GetString(unsigned int n) const wxOVERRIDE;
     virtual void SetString(unsigned int n, const wxString& s) wxOVERRIDE;
@@ -109,6 +107,7 @@ public:
     virtual void EnsureVisible(int n) wxOVERRIDE;
 
     virtual int GetTopItem() const wxOVERRIDE;
+    virtual int GetCountPerPage() const wxOVERRIDE;
 
     virtual wxVisualAttributes GetDefaultAttributes() const wxOVERRIDE
     {
@@ -121,9 +120,11 @@ public:
 
     wxListWidgetImpl* GetListPeer() const;
 
-    bool MacGetBlockEvents() const { return m_blockEvents; }
-
     virtual void HandleLineEvent( unsigned int n, bool doubleClick );
+
+    // This is called by wxNSTableView
+    void MacHandleSelectionChange(int row);
+
 protected:
     // callback for derived classes which may have to insert additional data
     // at a certain line - which cannot be predetermined for sorted list data

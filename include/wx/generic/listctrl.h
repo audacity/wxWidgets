@@ -32,8 +32,9 @@ class WXDLLIMPEXP_FWD_CORE wxListMainWindow;
 class WXDLLIMPEXP_CORE wxGenericListCtrl: public wxNavigationEnabled<wxListCtrlBase>,
                                           public wxScrollHelper
 {
-public:
+    typedef wxNavigationEnabled<wxListCtrlBase> BaseType;
 
+public:
     wxGenericListCtrl() : wxScrollHelper(this)
     {
         Init();
@@ -72,7 +73,7 @@ public:
 
     bool GetItem( wxListItem& info ) const;
     bool SetItem( wxListItem& info ) ;
-    long SetItem( long index, int col, const wxString& label, int imageId = -1 );
+    bool SetItem( long index, int col, const wxString& label, int imageId = -1 );
     int  GetItemState( long item, long stateMask ) const;
     bool SetItemState( long item, long state, long stateMask);
     bool SetItemImage( long item, int image, int selImage = -1 );
@@ -86,7 +87,7 @@ public:
     bool GetSubItemRect( long item, long subItem, wxRect& rect, int code = wxLIST_RECT_BOUNDS ) const;
     bool GetItemPosition( long item, wxPoint& pos ) const;
     bool SetItemPosition( long item, const wxPoint& pos ); // not supported in wxGLC
-    int GetItemCount() const;
+    int GetItemCount() const wxOVERRIDE;
     int GetColumnCount() const wxOVERRIDE;
     void SetItemSpacing( int spacing, bool isSmall = false );
     wxSize GetItemSpacing() const;
@@ -130,6 +131,7 @@ public:
     bool EndEditLabel(bool cancel);
 
     wxTextCtrl* GetEditControl() const;
+    bool IsVisible(long item) const wxOVERRIDE;
     void Edit( long item ) { EditLabel(item); }
 
     bool EnsureVisible( long item );
@@ -211,20 +213,7 @@ protected:
     long DoInsertColumn(long col, const wxListItem& info) wxOVERRIDE;
 
 
-    virtual bool DoPopupMenu( wxMenu *menu, int x, int y ) wxOVERRIDE;
-
     virtual wxSize DoGetBestClientSize() const wxOVERRIDE;
-
-    // return the text for the given column of the given item
-    virtual wxString OnGetItemText(long item, long column) const;
-
-    // return the icon for the given item. In report view, OnGetItemImage will
-    // only be called for the first column. See OnGetItemColumnImage for
-    // details.
-    virtual int OnGetItemImage(long item) const;
-
-    // return the icon for the given item and column.
-    virtual int OnGetItemColumnImage(long item, long column) const;
 
     // it calls our OnGetXXX() functions
     friend class WXDLLIMPEXP_FWD_CORE wxListMainWindow;

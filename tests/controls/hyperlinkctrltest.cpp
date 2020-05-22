@@ -28,8 +28,8 @@ class HyperlinkCtrlTestCase : public CppUnit::TestCase
 public:
     HyperlinkCtrlTestCase() { }
 
-    void setUp();
-    void tearDown();
+    void setUp() wxOVERRIDE;
+    void tearDown() wxOVERRIDE;
 
 private:
     CPPUNIT_TEST_SUITE( HyperlinkCtrlTestCase );
@@ -92,7 +92,7 @@ void HyperlinkCtrlTestCase::Url()
 
 void HyperlinkCtrlTestCase::Click()
 {
-#if wxUSE_UIACTIONSIMULATOR && !defined(__WXGTK__)
+#if wxUSE_UIACTIONSIMULATOR
     EventCounter hyperlink(m_hyperlink, wxEVT_HYPERLINK);
 
     wxUIActionSimulator sim;

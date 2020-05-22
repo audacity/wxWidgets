@@ -34,11 +34,7 @@
 #endif
 
 #if wxUSE_STD_IOSTREAM
-    #if wxUSE_IOSTREAMH
-        #include <fstream.h>
-    #else
-        #include <fstream>
-    #endif
+    #include <fstream>
 #endif
 
 #include "wx/filefn.h"
@@ -139,6 +135,22 @@ void wxTextCtrl::MacCheckSpelling(bool check)
     GetTextPeer()->CheckSpelling(check);
 }
 
+void wxTextCtrl::OSXEnableAutomaticQuoteSubstitution(bool enable)
+{
+    GetTextPeer()->EnableAutomaticQuoteSubstitution(enable);
+}
+
+void wxTextCtrl::OSXEnableAutomaticDashSubstitution(bool enable)
+{
+    GetTextPeer()->EnableAutomaticDashSubstitution(enable);
+}
+
+void wxTextCtrl::OSXDisableAllSmartSubstitutions()
+{
+    OSXEnableAutomaticDashSubstitution(false);
+    OSXEnableAutomaticQuoteSubstitution(false);
+}
+
 bool wxTextCtrl::SetFont( const wxFont& font )
 {
     if ( !wxTextCtrlBase::SetFont( font ) )
@@ -170,44 +182,45 @@ bool wxTextCtrl::IsModified() const
     return m_dirty;
 }
 
-bool wxTextCtrl::AcceptsFocus() const
-{
-    // we don't want focus if we can't be edited
-    return /*IsEditable() && */ wxControl::AcceptsFocus();
-}
-
 wxSize wxTextCtrl::DoGetBestSize() const
 {
+    int wText = -1;
+    int hText = -1;
+
     if (GetTextPeer())
     {
         wxSize size = GetTextPeer()->GetBestSize();
         if (size.x > 0 && size.y > 0)
-            return size;
+        {
+            hText = size.y;
+            wText = size.x;
+        }
     }
 
-    int wText, hText;
-
-    // these are the numbers from the HIG:
-    // we reduce them by the borders first
-    wText = 100 ;
-
-    switch ( m_windowVariant )
+    if ( hText == - 1)
     {
-        case wxWINDOW_VARIANT_NORMAL :
-            hText = 22 - 6 ;
-            break ;
+        // these are the numbers from the HIG:
+        // we reduce them by the borders first
+        wText = 100 ;
 
-        case wxWINDOW_VARIANT_SMALL :
-            hText = 19 - 6 ;
-            break ;
+        switch ( m_windowVariant )
+        {
+            case wxWINDOW_VARIANT_NORMAL :
+                hText = 22 - 6 ;
+                break ;
 
-        case wxWINDOW_VARIANT_MINI :
-            hText = 15 - 6 ;
-            break ;
+            case wxWINDOW_VARIANT_SMALL :
+                hText = 19 - 6 ;
+                break ;
 
-        default :
-            hText = 22 - 6;
-            break ;
+            case wxWINDOW_VARIANT_MINI :
+                hText = 15 - 6 ;
+                break ;
+
+            default :
+                hText = 22 - 6;
+                break ;
+        }
     }
 
     // as the above numbers have some free space around the text
@@ -457,6 +470,17 @@ void wxTextCtrl::Command(wxCommandEvent & event)
 {
     SetValue(event.GetString());
     ProcessCommand(event);
+}
+
+void wxTextCtrl::SetWindowStyleFlag(long style)
+{
+    long styleOld = GetWindowStyleFlag();
+
+    wxTextCtrlBase::SetWindowStyleFlag(style);
+
+    static const long flagsAlign = wxTE_LEFT | wxTE_CENTRE | wxTE_RIGHT;
+    if ( (style & flagsAlign) != (styleOld & flagsAlign) )
+        GetTextPeer()->SetJustification();
 }
 
 // ----------------------------------------------------------------------------
@@ -748,7 +772,10 @@ int wxTextWidgetImpl::GetLineLength(long lineNo) const
             count++;
     }
 
-    return 0 ;
+    return -1 ;
 }
 
+void wxTextWidgetImpl::SetJustification()
+{
+}
 #endif // wxUSE_TEXTCTRL

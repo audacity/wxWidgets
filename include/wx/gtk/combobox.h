@@ -128,6 +128,8 @@ public:
     static wxVisualAttributes
     GetClassDefaultAttributes(wxWindowVariant variant = wxWINDOW_VARIANT_NORMAL);
 
+    virtual const wxTextEntry* WXGetTextEntry() const wxOVERRIDE { return this; }
+
 protected:
     // From wxWindowGTK:
     virtual GdkWindow *GTKGetWindow(wxArrayGdkWindows& windows) const wxOVERRIDE;
@@ -145,13 +147,16 @@ protected:
     virtual GtkEntry *GetEntry() const wxOVERRIDE
         { return m_entry; }
 
+    virtual int GTKIMFilterKeypress(GdkEventKey* event) const wxOVERRIDE
+        { return GTKEntryIMFilterKeypress(event); }
+
+
     GtkEntry*   m_entry;
 
 private:
     // From wxTextEntry:
     virtual wxWindow *GetEditableWindow() wxOVERRIDE { return this; }
     virtual GtkEditable *GetEditable() const wxOVERRIDE;
-    virtual void EnableTextChangedEvents(bool enable) wxOVERRIDE;
 
     void Init();
 

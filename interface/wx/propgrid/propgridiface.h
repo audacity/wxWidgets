@@ -71,6 +71,38 @@ wxPG_SORT_TOP_LEVEL_ONLY          = 0x00000200
 /** @}
 */
 
+/** @section propgrid_misc_data wxPropertyGrid Miscellaneous
+
+    This section describes some miscellaneous values, types and macros.
+    @{
+*/
+
+/**
+    Used to tell wxPGProperty to use label as name as well.
+*/
+#define wxPG_LABEL              (*wxPGProperty::sm_wxPG_LABEL)
+
+/**
+    This is the value placed in wxPGProperty::sm_wxPG_LABEL
+*/
+#define wxPG_LABEL_STRING       wxS("@!")
+
+#define wxPG_COLOUR_BLACK       (*wxBLACK)
+
+/**
+    Convert Red, Green and Blue to a single 32-bit value.
+*/
+#define wxPG_COLOUR(R,G,B) ((wxUint32)(R+(G<<8)+(B<<16)))
+
+/**
+    If property is supposed to have custom-painted image, then returning
+    this in OnMeasureImage() will usually be enough.
+*/
+#define wxPG_DEFAULT_IMAGE_SIZE  wxDefaultSize
+
+/** @}
+*/
+
 /**
     @class wxPropertyGridInterface
 
@@ -110,7 +142,7 @@ public:
           Refresh() when calling this function after control has been shown for
           the first time.
         - This functions deselects selected property, if any. Validation
-          failure option wxPG_VFB_STAY_IN_PROPERTY is not respected, ie.
+          failure option wxPG_VFB_STAY_IN_PROPERTY is not respected, i.e.
           selection is cleared even if editor had invalid value.
     */
     wxPGProperty* Append( wxPGProperty* property );
@@ -139,7 +171,7 @@ public:
         Deletes all properties.
 
         @remarks This functions deselects selected property, if any. Validation
-                failure option wxPG_VFB_STAY_IN_PROPERTY is not respected, ie.
+                failure option wxPG_VFB_STAY_IN_PROPERTY is not respected, i.e.
                 selection is cleared even if editor had invalid value.
     */
     virtual void Clear() = 0;
@@ -155,9 +187,8 @@ public:
                fail if validation was enabled and active editor had invalid
                value.
 
-        @remarks In wxPropertyGrid 1.4, this member function used to send
-                 wxPG_EVT_SELECTED. In wxWidgets 2.9 and later, it no longer
-                 does that.
+        @remarks In wxWidgets 2.9 and later, this function no longer
+        sends @c wxPG_EVT_SELECTED.
 
         @see wxPropertyGrid::SelectProperty()
     */
@@ -174,7 +205,7 @@ public:
         @return Returns @true if actually collapsed.
 
         @remarks This function may deselect selected property, if any. Validation
-                failure option wxPG_VFB_STAY_IN_PROPERTY is not respected, ie.
+                failure option wxPG_VFB_STAY_IN_PROPERTY is not respected, i.e.
                 selection is cleared even if editor had invalid value.
     */
     bool Collapse( wxPGPropArg id );
@@ -186,7 +217,7 @@ public:
         Return @false if failed (may fail if editor value cannot be validated).
 
         @remarks This functions clears selection. Validation failure option
-                wxPG_VFB_STAY_IN_PROPERTY is not respected, ie. selection
+                wxPG_VFB_STAY_IN_PROPERTY is not respected, i.e. selection
                 is cleared even if editor had invalid value.
     */
     bool CollapseAll();
@@ -194,7 +225,10 @@ public:
     /**
         Changes value of a property, as if by user. Use this instead of
         SetPropertyValue() if you need the value to run through validation
-        process, and also send the property change event.
+        process, and also send @c wxEVT_PG_CHANGED.
+
+        @remarks Since this function sends @c wxEVT_PG_CHANGED, it should not
+        be called from @c EVT_PG_CHANGED handler.
 
         @return Returns @true if value was successfully changed.
     */
@@ -212,7 +246,7 @@ public:
 
                  This functions deselects selected property, if any.
                  Validation failure option wxPG_VFB_STAY_IN_PROPERTY is not
-                 respected, ie. selection is cleared even if editor had
+                 respected, i.e. selection is cleared even if editor had
                  invalid value.
     */
     void DeleteProperty( wxPGPropArg id );
@@ -263,7 +297,7 @@ public:
         @return Returns @true if actually expanded.
 
         @remarks This function may deselect selected property, if any. Validation
-                failure option wxPG_VFB_STAY_IN_PROPERTY is not respected, ie.
+                failure option wxPG_VFB_STAY_IN_PROPERTY is not respected, i.e.
                 selection is cleared even if editor had invalid value.
     */
     bool Expand( wxPGPropArg id );
@@ -272,7 +306,7 @@ public:
         Expands all items that can be expanded.
 
         @remarks This functions clears selection. Validation failure option
-                wxPG_VFB_STAY_IN_PROPERTY is not respected, ie. selection
+                wxPG_VFB_STAY_IN_PROPERTY is not respected, i.e. selection
                 is cleared even if editor had invalid value.
     */
     bool ExpandAll( bool expand = true );
@@ -344,21 +378,23 @@ public:
 
         @remarks Properties which have non-category, non-root parent
                  cannot be accessed globally by their name. Instead, use
-                 "<property>.<subproperty>" instead of "<subproperty>".
+                 @"@<property@>.@<subproperty@>@" instead of @"@<subproperty@>@".
     */
     wxPGProperty* GetProperty( const wxString& name ) const;
 
     /**
-        Adds to 'targetArr' pointers to properties that have given flags 'flags' set.
-        However, if @a 'inverse' is set to @true, then only properties without
+        Adds to @a targetArr pointers to properties that have given @a flags set.
+        However, if @a inverse is set to @true, then only properties without
         given flags are stored.
 
         @param targetArr
-            @todo docme
+            Array of pointers to properties in which found properties are
+            stored.
         @param flags
             Property flags to use.
         @param inverse
-            @todo docme
+            If @false, properties that have given flags are stored, otherwise
+            there are stored only properties without given flags.
         @param iterFlags
             Iterator flags to use. Default is everything expect private children.
             See @ref propgrid_iterator_flags.
@@ -377,7 +413,7 @@ public:
         Returns map-like storage of property's attributes.
 
         @remarks
-        Note that if extra style wxPG_EX_WRITEONLY_BUILTIN_ATTRIBUTES is set,
+        Note that if extra style ::wxPG_EX_WRITEONLY_BUILTIN_ATTRIBUTES is set,
         then builtin-attributes are not included in the storage.
     */
     const wxPGAttributeStorage& GetPropertyAttributes( wxPGPropArg id ) const;
@@ -414,8 +450,8 @@ public:
     wxPGProperty* GetPropertyByName( const wxString& name ) const;
 
     /**
-        Returns child property 'subname' of property 'name'. Same as
-        calling GetPropertyByName("name.subname"), albeit slightly faster.
+        Returns child property @a subname of property @a name. Same as
+        calling GetPropertyByName(@"name.subname@"), albeit slightly faster.
     */
     wxPGProperty* GetPropertyByName( const wxString& name,
                                      const wxString& subname ) const;
@@ -510,16 +546,16 @@ public:
         property values. Order is not guaranteed.
 
         @param listname
-            @todo docme
+            Name of the returned wxVariant list.
         @param baseparent
-            @todo docme
+            The base property which children properties will be queried for
+            values.
         @param flags
-            Use wxPG_KEEP_STRUCTURE to retain category structure; each sub
+            Use @c wxPG_KEEP_STRUCTURE to retain category structure; each sub
             category will be its own wxVariantList of wxVariant.
-
-            Use wxPG_INC_ATTRIBUTES to include property attributes as well.
+            Use @c wxPG_INC_ATTRIBUTES to include property attributes as well.
             Each attribute will be stored as list variant named
-            "@@<propname>@@attr."
+            @"@@@<propname@>@@attr.@"
     */
     wxVariant GetPropertyValues( const wxString& listname = wxEmptyString,
                                  wxPGProperty* baseparent = NULL, long flags = 0 ) const;
@@ -554,7 +590,7 @@ public:
         Hides or reveals a property.
 
         @param id
-            @todo docme
+            Name or pointer to a property.
         @param hide
             If @true, hides property, otherwise reveals it.
         @param flags
@@ -594,7 +630,7 @@ public:
           especially true if current mode is non-categoric.
 
         - This functions deselects selected property, if any. Validation
-          failure option wxPG_VFB_STAY_IN_PROPERTY is not respected, ie.
+          failure option wxPG_VFB_STAY_IN_PROPERTY is not respected, i.e.
           selection is cleared even if editor had invalid value.
 
         Example of use:
@@ -657,7 +693,7 @@ public:
     /**
         Returns @true if property is selected.
     */
-    virtual bool IsPropertySelected( wxPGPropArg id ) const;
+    bool IsPropertySelected( wxPGPropArg id ) const;
 
     /**
         Returns @true if property is shown (i.e. HideProperty() with @true not
@@ -671,8 +707,8 @@ public:
     bool IsPropertyValueUnspecified( wxPGPropArg id ) const;
 
     /**
-        Disables (limit = @true) or enables (limit = @false) wxTextCtrl editor
-        of a property, if it is not the sole mean to edit the value.
+        Disables (@a limit = @true) or enables (@a limit = @false) wxTextCtrl
+        editor of a property, if it is not the sole mean to edit the value.
 
         @remarks
         Property is refreshed with new settings.
@@ -680,7 +716,7 @@ public:
     void LimitPropertyEditing( wxPGPropArg id, bool limit = true );
 
     /**
-        If state is shown in it's grid, refresh it now.
+        If state is shown in its grid, refresh it now.
     */
     virtual void RefreshGrid( wxPropertyGridPageState* state = NULL );
 
@@ -832,7 +868,7 @@ public:
         Sets an attribute for this property.
 
         @param id
-            @todo docme
+            Name or pointer to a property.
         @param attrName
             Text identifier of attribute. See @ref propgrid_property_attributes.
         @param value
@@ -850,7 +886,7 @@ public:
                                wxVariant value, long argFlags = 0 );
 
     /**
-        Sets property attribute for all applicapple properties.
+        Sets property attribute for all applicable properties.
         Be sure to use this method only after all properties have been
         added to the grid.
 
@@ -923,7 +959,7 @@ public:
         Sets editor for a property.
 
         @param id
-            @todo docme
+            Property name or pointer to a property.
         @param editor
             For builtin editors, use wxPGEditor_X, where X is builtin editor's
             name (TextCtrl, Choice, etc. see wxPGEditor documentation for full
@@ -1003,7 +1039,7 @@ public:
     /**
         Associates the help string with property.
 
-        @remarks By default, text is shown either in the manager's "description"
+        @remarks By default, text is shown either in the manager's @"description@"
                 text box or in the status bar. If extra window style
                 wxPG_EX_HELP_AS_TOOLTIPS is used, then the text will appear as
                 a tooltip.
@@ -1019,7 +1055,19 @@ public:
     void SetPropertyImage( wxPGPropArg id, wxBitmap& bmp );
 
     /**
-        Sets max length of property's text.
+        Sets maximum length of text in property text editor.
+
+        @param id
+            Property name or pointer.
+        @param maxLen
+            Maximum number of characters of the text the user can enter in
+            the text editor. If it is 0, the length is not limited and the text
+            can be as long as it is supported by the the underlying native text
+            control widget.
+        @return
+            Returns @true if maximum length was set.
+        @see
+            wxPGProperty::SetMaxLength.
     */
     bool SetPropertyMaxLength( wxPGPropArg id, int maxLen );
 
@@ -1112,8 +1160,8 @@ public:
     /**
         Sets value (wxVariant) of a property.
 
-        @remarks Use wxPropertyGrid::ChangePropertyValue() instead if you need to
-                run through validation process and send property change event.
+        @remarks Use ChangePropertyValue() instead if you need to
+        run through validation process and send property change event.
     */
     void SetPropertyValue( wxPGPropArg id, wxVariant value );
 

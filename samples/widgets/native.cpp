@@ -143,6 +143,13 @@ protected:
 
 #elif defined(__WXGTK__)
 
+// Avoid a bunch of warnings from gtk.h for some GTK+ versions.
+wxGCC_WARNING_SUPPRESS(deprecated-declarations)
+wxGCC_WARNING_SUPPRESS(parentheses)
+#include <gtk/gtk.h>
+wxGCC_WARNING_RESTORE(parentheses)
+wxGCC_WARNING_RESTORE(deprecated-declarations)
+
 class NativeWindow : public wxNativeWindow
 {
 public:
@@ -267,7 +274,7 @@ private:
 // implementation
 // ============================================================================
 
-IMPLEMENT_WIDGETS_PAGE(NativeWidgetsPage, wxT("Native"), NATIVE_CTRLS);
+IMPLEMENT_WIDGETS_PAGE(NativeWidgetsPage, "Native", NATIVE_CTRLS);
 
 NativeWidgetsPage::NativeWidgetsPage(WidgetsBookCtrl *book, wxImageList *imaglist)
                  : WidgetsPage(book, imaglist, native_xpm)

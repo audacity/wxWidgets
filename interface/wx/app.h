@@ -311,7 +311,7 @@ public:
     virtual bool OnCmdLineError(wxCmdLineParser& parser);
 
     /**
-        Called when the help option (@c --help) was specified on the command line.
+        Called when the help option (@c \--help) was specified on the command line.
         The default behaviour is to show the program usage text and abort the program.
 
         Return @true to continue normal execution or @false to return
@@ -1063,10 +1063,25 @@ public:
         is specified in the @c Info.plist file.
 
         @onlyfor{wxosx}
-        
+
         @since 3.0.1
     */
     virtual bool OSXIsGUIApplication();
+
+    /**
+        Enable the automatic tabbing features of macOS.
+
+        This feature is native to the operating system. When it is enabled, macOS
+        will automatically place windows inside tabs and show a tab bar in the
+        application. Entries are also added to the View menu to show/hide the tab bar.
+
+        @onlyfor{wxosx}
+
+        @remarks Requires macOS 10.12+, does nothing under earlier OS versions.
+
+        @since 3.1.4
+    */
+    void OSXEnableAutomaticTabbing(bool enable);
 
     //@}
 

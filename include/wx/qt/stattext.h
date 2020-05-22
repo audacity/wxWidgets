@@ -8,7 +8,7 @@
 #ifndef _WX_QT_STATTEXT_H_
 #define _WX_QT_STATTEXT_H_
 
-#include <QtWidgets/QLabel>
+class QLabel;
 
 class WXDLLIMPEXP_CORE wxStaticText : public wxStaticTextBase
 {
@@ -30,9 +30,14 @@ public:
                 long style = 0,
                 const wxString &name = wxStaticTextNameStr );
 
-    void SetLabel(const wxString& label);
+    virtual void SetLabel(const wxString& label) wxOVERRIDE;
 
-    QLabel *GetHandle() const;
+    virtual QWidget *GetHandle() const wxOVERRIDE;
+
+protected:
+    virtual wxString WXGetVisibleLabel() const wxOVERRIDE;
+    virtual void WXSetVisibleLabel(const wxString& str) wxOVERRIDE;
+
 private:
     QLabel *m_qtLabel;
 

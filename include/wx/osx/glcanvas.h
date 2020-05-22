@@ -43,7 +43,7 @@ public:
                 const wxGLContextAttrs *ctxAttrs = NULL);
     virtual ~wxGLContext();
 
-    virtual bool SetCurrent(const wxGLCanvas& win) const;
+    virtual bool SetCurrent(const wxGLCanvas& win) const wxOVERRIDE;
 
     // Mac-specific
     WXGLContext GetWXGLContext() const { return m_glContext; }
@@ -158,6 +158,13 @@ public:
     // implementation-only from now on
 
 protected:
+    bool DoCreate(wxWindow *parent,
+                              wxWindowID id,
+                              const wxPoint& pos,
+                              const wxSize& size,
+                              long style,
+                  const wxString& name);
+
     WXGLPixelFormat m_glFormat;
     wxGLAttributes m_GLAttrs;
 

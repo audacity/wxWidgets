@@ -30,8 +30,8 @@ class NumValidatorTestCase : public CppUnit::TestCase
 public:
     NumValidatorTestCase() { }
 
-    void setUp();
-    void tearDown();
+    void setUp() wxOVERRIDE;
+    void tearDown() wxOVERRIDE;
 
 private:
     CPPUNIT_TEST_SUITE( NumValidatorTestCase );
@@ -210,6 +210,16 @@ void NumValidatorTestCase::Interactive()
     if ( IsAutomaticTest() )
         return;
 #endif // __WXMSW__
+
+#ifdef __WXGTK20__
+    // Travis CI fails without this!
+    if ( IsAutomaticTest() )
+    {
+        wxFrame* frame = wxDynamicCast(wxTheApp->GetTopWindow(), wxFrame);
+        frame->SetFocus();
+        frame->Raise();
+    }
+#endif // __WXGTK20__
 
     // Set a locale using comma as thousands separator character.
     wxLocale loc(wxLANGUAGE_ENGLISH_UK, wxLOCALE_DONT_LOAD_DEFAULT);

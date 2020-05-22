@@ -10,14 +10,22 @@
 #ifndef _WX_GTK_MIMETYPE_IMPL_H
 #define _WX_GTK_MIMETYPE_IMPL_H
 
+#include "wx/defs.h"
+
+#if defined(__UNIX__)
 #include "wx/unix/mimetype.h"
+#elif defined(__WINDOWS__)
+#include "wx/msw/mimetype.h"
+#endif
 
 #if wxUSE_MIMETYPE
 
 class WXDLLIMPEXP_CORE wxGTKMimeTypesManagerImpl : public wxMimeTypesManagerImpl
 {
 protected:
+#if defined(__UNIX__)
     wxString GetIconFromMimeType(const wxString& mime) wxOVERRIDE;
+#endif
 };
 
 

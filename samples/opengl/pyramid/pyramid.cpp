@@ -489,7 +489,7 @@ bool MyGLCanvas::oglInit()
     int swi = 0, shi = 0; //Image sizes
     wxString stg("wxWidgets");
     // Set the font. Use a big pointsize so as to smoothing edges.
-    wxFont font(48, wxFONTFAMILY_MODERN, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+    wxFont font(wxFontInfo(48).Family(wxFONTFAMILY_MODERN));
     if ( !font.IsOk() )
         font = *wxSWISS_FONT;
     wxColour bgrdColo(*wxBLACK);
@@ -565,8 +565,9 @@ void MyGLCanvas::OnSize(wxSizeEvent& event)
     SetCurrent(*m_oglContext);
 
     // It's up to the application code to update the OpenGL viewport settings.
-    m_winHeight = event.GetSize().y;
-    m_oglManager->SetViewport(0, 0, event.GetSize().x, m_winHeight);
+    const wxSize size = event.GetSize() * GetContentScaleFactor();
+    m_winHeight = size.y;
+    m_oglManager->SetViewport(0, 0, size.x, m_winHeight);
 
     // Generate paint event without erasing the background.
     Refresh(false);
