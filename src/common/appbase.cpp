@@ -1394,3 +1394,8 @@ void ShowAssertDialog(const wxString& file,
 }
 
 #endif // wxDEBUG_LEVEL
+
+wxEventFilter::~wxEventFilter()
+{
+  wxASSERT_MSG( !m_next, "Forgot to call wxEvtHandler::RemoveFilter()?" );
+}

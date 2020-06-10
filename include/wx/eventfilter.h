@@ -19,7 +19,7 @@ class WXDLLIMPEXP_FWD_BASE wxEvtHandler;
 // wxEventFilter is used with wxEvtHandler::AddFilter() and ProcessEvent().
 // ----------------------------------------------------------------------------
 
-class wxEventFilter
+class WXDLLIMPEXP_BASE wxEventFilter
 {
 public:
     // Possible return values for FilterEvent().
@@ -43,10 +43,7 @@ public:
         m_next = NULL;
     }
 
-    virtual ~wxEventFilter()
-    {
-        wxASSERT_MSG( !m_next, "Forgot to call wxEvtHandler::RemoveFilter()?" );
-    }
+    virtual ~wxEventFilter();
 
     // This method allows to filter all the events processed by the program, so
     // you should try to return quickly from it to avoid slowing down the
